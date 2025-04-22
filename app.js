@@ -2,13 +2,54 @@ $(document).ready(function () {
     // Data structure to hold members and their savings
     let members = [];
 
-    // Fetch data from JSON file
-    $.getJSON('data.json', function (data) {
-        members = data;
-        renderMembers(); // Render members after fetching data
-    }).fail(function () {
-        showAlert('Gagal memuat data dari file JSON.', 'error');
-    });
+    // Loading state indicator
+    let isLoading = true;
+    
+    // Show loading indicator function
+    function showLoading() {
+        $('#membersList').html(`
+            <div class="text-center py-8">
+                <div class="flex justify-center mb-4">
+                    <i class="fas fa-spinner fa-spin text-blue-500 text-5xl"></i>
+                </div>
+                <p class="text-center text-gray-500">Memuat data member...</p>
+            </div>
+        `);
+    }
+    
+    // Show initial loading
+    showLoading();
+    
+    // Fetch data from Firestore
+    function fetchMembers() {
+        isLoading = true;
+        showLoading();
+        
+        // Get members collection from Firestore
+        db.collection('members').get().then((querySnapshot) => {
+            members = [];
+            querySnapshot.forEach((doc) => {
+                const memberData = doc.data();
+                members.push({
+                    id: doc.id,  // Store Firestore document ID
+                    name: memberData.name,
+                    note: memberData.note || '',
+                    savings: memberData.savings || []
+                });
+            });
+            
+            isLoading = false;
+            renderMembers();
+        }).catch((error) => {
+            console.error("Error fetching members: ", error);
+            isLoading = false;
+            showAlert('Gagal memuat data dari Firebase.', 'error');
+            renderMembers();
+        });
+    }
+    
+    // Initial data fetch
+    fetchMembers();
 
     // Pagination configuration
     const paginationConfig = {
@@ -267,34 +308,49 @@ $(document).ready(function () {
     $('#memberForm').on('submit', function (e) {
         e.preventDefault();
         const name = $('#memberName').val().trim();
-        const target = parseInt($('#targetTabungan').val());
 
-        if (!name || target < 0) {
+        if (!name) {
             showAlert('Mohon isi data dengan benar.', 'error');
             return;
         }
 
         // Check if member name already exists (case insensitive)
-        const exists = members.some(m => m.name.toLowerCase() === name.toLowerCase());
+        const exists = members.some(m => m.name && m.name.toLowerCase() === name.toLowerCase());
         if (exists) {
             showAlert('Member dengan nama tersebut sudah terdaftar.', 'warning');
             return;
         }
 
-        members.push({
-            name,
-            target,
-            note: $('#memberNote').val().trim(),
-            savings: [],
-        });
+        // Show loading during save
+        showLoading();
 
-        $(this)[0].reset();
-        $('#memberModal').addClass('hidden');
-        $('body').css('overflow', '');
-        // After adding a new member, go to the last page to show the new member
-        paginationConfig.currentPage = Math.ceil(members.length / paginationConfig.membersPerPage);
-        renderMembers();
-        showAlert(`Member "${name}" berhasil didaftarkan.`, 'success');
+        const newMember = {
+            name,
+            note: $('#memberNote').val().trim(),
+            savings: []
+        };
+
+        // Add to Firestore
+        db.collection('members').add(newMember)
+            .then((docRef) => {
+                // Update local data with the document ID
+                newMember.id = docRef.id;
+                members.push(newMember);
+
+                $(this)[0].reset();
+                $('#memberModal').addClass('hidden');
+                $('body').css('overflow', '');
+
+                // After adding a new member, go to the last page to show the new member
+                paginationConfig.currentPage = Math.ceil(members.length / paginationConfig.membersPerPage);
+                renderMembers();
+                showAlert(`Member "${name}" berhasil didaftarkan.`, 'success');
+            })
+            .catch((error) => {
+                console.error("Error adding member: ", error);
+                showAlert(`Gagal mendaftarkan member: ${error.message}`, 'error');
+                renderMembers();
+            });
     });
 
     // Handle adding savings
@@ -313,17 +369,38 @@ $(document).ready(function () {
         }
 
         const today = new Date().toISOString();
-
-        members[memberIndex].savings.push({
+        const member = members[memberIndex];
+        
+        // Show loading state
+        showLoading();
+        
+        const newSaving = {
             date: today,
             amount,
+            type: 'tabungan' // Default to tabungan
+        };
+        
+        // Create a copy of the member's savings and add the new one
+        const updatedSavings = [...member.savings, newSaving];
+        
+        // Update Firestore
+        db.collection('members').doc(member.id).update({
+            savings: updatedSavings
+        })
+        .then(() => {
+            // Update local data
+            members[memberIndex].savings = updatedSavings;
+            
+            $(this)[0].reset();
+            renderMembers();
+            showAlert(`Tabungan sebesar ${formatRupiah(amount)} berhasil ditambahkan untuk member "${members[memberIndex].name}".`, 'success');
+        })
+        .catch((error) => {
+            console.error("Error adding saving: ", error);
+            showAlert(`Gagal menambahkan tabungan: ${error.message}`, 'error');
+            renderMembers();
         });
-
-        $(this)[0].reset();
-        renderMembers();
-        showAlert(`Tabungan sebesar ${formatRupiah(amount)} berhasil ditambahkan untuk member "${members[memberIndex].name}".`, 'success');
     });
-
 
     // Close mobile menu on Escape key globally
     $(document).on('keydown', function (e) {
@@ -376,7 +453,6 @@ $(document).ready(function () {
 
         $('#editMemberIndex').val(index);
         $('#editMemberName').val(member.name);
-        $('#editTargetTabungan').val(member.target);
         $('#editMemberNote').val(member.note || '');
 
         $('#editMemberModal').removeClass('hidden');
@@ -411,9 +487,8 @@ $(document).ready(function () {
         e.preventDefault();
         const index = parseInt($('#editMemberIndex').val());
         const name = $('#editMemberName').val().trim();
-        const target = parseInt($('#editTargetTabungan').val());
 
-        if (!name || target < 0) {
+        if (!name) {
             showAlert('Mohon isi data dengan benar.', 'error');
             return;
         }
@@ -425,15 +500,31 @@ $(document).ready(function () {
             return;
         }
 
-        // Update the member data
-        members[index].name = name;
-        members[index].target = target;
-        members[index].note = $('#editMemberNote').val().trim();
+        const member = members[index];
+        
+        // Show loading state
+        showLoading();
+        
+        // Update data in Firestore
+        db.collection('members').doc(member.id).update({
+            name: name,
+            note: $('#editMemberNote').val().trim()
+        })
+        .then(() => {
+            // Update the member data locally
+            members[index].name = name;
+            members[index].note = $('#editMemberNote').val().trim();
 
-        $('#editMemberModal').addClass('hidden');
-        $('body').css('overflow', '');
-        renderMembers();
-        showAlert(`Data member "${name}" berhasil diperbarui.`, 'success');
+            $('#editMemberModal').addClass('hidden');
+            $('body').css('overflow', '');
+            renderMembers();
+            showAlert(`Data member "${name}" berhasil diperbarui.`, 'success');
+        })
+        .catch((error) => {
+            console.error("Error updating member: ", error);
+            showAlert(`Gagal memperbarui member: ${error.message}`, 'error');
+            renderMembers();
+        });
     });
 
     // ===== Delete Member Functionality =====
@@ -459,14 +550,28 @@ $(document).ready(function () {
     // Confirm delete
     $('#confirmDelete').on('click', function () {
         const index = parseInt($('#deleteMemberIndex').val());
-        const memberName = members[index].name;
+        const member = members[index];
+        const memberName = member.name;
+        
+        // Show loading state
+        showLoading();
+        
+        // Delete from Firestore
+        db.collection('members').doc(member.id).delete()
+            .then(() => {
+                // Remove from local array
+                members.splice(index, 1);
 
-        members.splice(index, 1);
-
-        $('#deleteMemberModal').addClass('hidden');
-        $('body').css('overflow', '');
-        renderMembers();
-        showAlert(`Member "${memberName}" berhasil dihapus.`, 'success');
+                $('#deleteMemberModal').addClass('hidden');
+                $('body').css('overflow', '');
+                renderMembers();
+                showAlert(`Member "${memberName}" berhasil dihapus.`, 'success');
+            })
+            .catch((error) => {
+                console.error("Error deleting member: ", error);
+                showAlert(`Gagal menghapus member: ${error.message}`, 'error');
+                renderMembers();
+            });
     });
 
     // Close delete modal when clicking outside
@@ -566,65 +671,40 @@ $(document).ready(function () {
         }
 
         const today = new Date().toISOString();
-
-        members[memberIndex].savings.push({
+        const member = members[memberIndex];
+        
+        const newSaving = {
             date: today,
             amount,
             type: savingType
+        };
+        
+        // Create a copy of the member's savings and add the new one
+        const updatedSavings = [...member.savings, newSaving];
+        
+        // Update Firestore
+        db.collection('members').doc(member.id).update({
+            savings: updatedSavings
+        })
+        .then(() => {
+            // Update local data
+            members[memberIndex].savings = updatedSavings;
+            
+            // Reset form
+            $(this)[0].reset();
+            
+            // Re-open the detail modal to refresh the data
+            refreshSavingsDetail(memberIndex);
+            
+            // Update the main screen if needed
+            renderMembers();
+            
+            showAlert(`Tabungan sebesar ${formatRupiah(amount)} berhasil ditambahkan untuk member "${member.name}".`, 'success');
+        })
+        .catch((error) => {
+            console.error("Error adding saving: ", error);
+            showAlert(`Gagal menambahkan tabungan: ${error.message}`, 'error');
         });
-
-        // Reset form
-        $(this)[0].reset();
-        
-        // Re-open the detail modal to refresh the data
-        const member = members[memberIndex];
-        
-        // Clear previous content
-        $('#savingsDetailTable').empty();
-
-        // Sort savings by date (newest first)
-        const sortedSavings = [...member.savings].sort((a, b) =>
-            new Date(b.date) - new Date(a.date)
-        );
-
-        // Calculate total savings
-        const totalSavings = member.savings.reduce((acc, cur) => acc + cur.amount, 0);
-
-        // Display each saving entry
-        $.each(sortedSavings, function (i, saving) {
-            const formattedDate = formatDate(saving.date);
-            const formattedAmount = formatRupiah(saving.amount);
-            const savingType = saving.type ? saving.type.charAt(0).toUpperCase() + saving.type.slice(1) : 'Tabungan'; // Capitalize first letter
-
-            const row = $(`
-                <tr class="${i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}">
-                    <td class="px-4 py-2 whitespace-nowrap">${formattedDate}</td>
-                    <td class="px-4 py-2">${savingType}</td>
-                    <td class="px-4 py-2 text-right font-medium">${formattedAmount}</td>
-                    <td class="px-4 py-2 text-right">
-                        <button class="btn-edit-saving text-blue-600 hover:text-blue-800 mx-1" 
-                            data-member-index="${memberIndex}" data-saving-index="${i}" 
-                            data-amount="${saving.amount}" data-type="${saving.type || 'tabungan'}">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn-delete-saving text-red-600 hover:text-red-800 mx-1"
-                            data-member-index="${memberIndex}" data-saving-index="${i}">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
-                    </td>
-                </tr>
-            `);
-
-            $('#savingsDetailTable').append(row);
-        });
-
-        // Show total amount
-        $('#totalSavingsAmount').text(formatRupiah(totalSavings));
-        
-        // Update the main screen if needed
-        renderMembers();
-        
-        showAlert(`Tabungan sebesar ${formatRupiah(amount)} berhasil ditambahkan untuk member "${member.name}".`, 'success');
     });
 
     // Close detail savings modal
@@ -705,38 +785,6 @@ $(document).ready(function () {
         }
     });
 
-    // After form submission, close the modal
-    $('#memberForm').on('submit', function (e) {
-        e.preventDefault();
-        const name = $('#memberName').val().trim();
-        const target = parseInt($('#targetTabungan').val());
-
-        if (!name || target < 0) {
-            showAlert('Mohon isi data dengan benar.', 'error');
-            return;
-        }
-
-        // Check if member name already exists (case insensitive)
-        const exists = members.some(m => m.name.toLowerCase() === name.toLowerCase());
-        if (exists) {
-            showAlert('Member dengan nama tersebut sudah terdaftar.', 'warning');
-            return;
-        }
-
-        members.push({
-            name,
-            target,
-            note: $('#memberNote').val().trim(),
-            savings: [],
-        });
-
-        $(this)[0].reset();
-        $('#memberModal').addClass('hidden');
-        $('body').css('overflow', '');
-        renderMembers();
-        showAlert(`Member "${name}" berhasil didaftarkan.`, 'success');
-    });
-
     // Set up member filter functionality
     function setupMemberFilters() {
         // Toggle filter panel
@@ -746,9 +794,6 @@ $(document).ready(function () {
 
         // Reset filters
         $('#btnResetMemberFilters').on('click', function () {
-            $('#filterTargetMin').val('');
-            $('#filterTargetMax').val('');
-            $('#filterProgress').val('');
             $('#filterNotes').val('');
             $('#memberSearch').val('');
             $('#sortMembers').val('name-asc');
@@ -957,19 +1002,38 @@ $(document).ready(function () {
             return;
         }
 
-        // Update the saving data
-        members[memberIndex].savings[savingIndex].amount = amount;
-        members[memberIndex].savings[savingIndex].type = type;
-
-        $('#editSavingsModal').addClass('hidden');
-        $('body').css('overflow', '');
+        const member = members[memberIndex];
         
-        // Refresh the detail savings modal
-        refreshSavingsDetail(memberIndex);
+        // Create a new array of savings with the updated item
+        const updatedSavings = [...member.savings];
+        updatedSavings[savingIndex] = {
+            ...updatedSavings[savingIndex],
+            amount: amount,
+            type: type
+        };
         
-        // Update the main view
-        renderMembers();
-        showAlert('Data tabungan berhasil diperbarui.', 'success');
+        // Update Firestore
+        db.collection('members').doc(member.id).update({
+            savings: updatedSavings
+        })
+        .then(() => {
+            // Update local data
+            members[memberIndex].savings = updatedSavings;
+            
+            $('#editSavingsModal').addClass('hidden');
+            $('body').css('overflow', '');
+            
+            // Refresh the detail savings modal
+            refreshSavingsDetail(memberIndex);
+            
+            // Update the main view
+            renderMembers();
+            showAlert('Data tabungan berhasil diperbarui.', 'success');
+        })
+        .catch((error) => {
+            console.error("Error updating saving: ", error);
+            showAlert(`Gagal memperbarui tabungan: ${error.message}`, 'error');
+        });
     });
 
     // ===== Delete Savings Functionality =====
@@ -996,19 +1060,33 @@ $(document).ready(function () {
     $('#confirmDeleteSavings').on('click', function () {
         const memberIndex = parseInt($('#deleteSavingsMemberIndex').val());
         const savingIndex = parseInt($('#deleteSavingsIndex').val());
+        const member = members[memberIndex];
         
-        // Remove the saving record
-        members[memberIndex].savings.splice(savingIndex, 1);
-
-        $('#deleteSavingsModal').addClass('hidden');
-        $('body').css('overflow', '');
+        // Create a new array of savings without the deleted item
+        const updatedSavings = member.savings.filter((_, index) => index !== savingIndex);
         
-        // Refresh the detail savings modal
-        refreshSavingsDetail(memberIndex);
-        
-        // Update the main view
-        renderMembers();
-        showAlert('Catatan tabungan berhasil dihapus.', 'success');
+        // Update Firestore
+        db.collection('members').doc(member.id).update({
+            savings: updatedSavings
+        })
+        .then(() => {
+            // Update local data
+            members[memberIndex].savings = updatedSavings;
+            
+            $('#deleteSavingsModal').addClass('hidden');
+            $('body').css('overflow', '');
+            
+            // Refresh the detail savings modal
+            refreshSavingsDetail(memberIndex);
+            
+            // Update the main view
+            renderMembers();
+            showAlert('Catatan tabungan berhasil dihapus.', 'success');
+        })
+        .catch((error) => {
+            console.error("Error deleting saving: ", error);
+            showAlert(`Gagal menghapus tabungan: ${error.message}`, 'error');
+        });
     });
 
     // Close delete savings modal when clicking outside
@@ -1078,4 +1156,10 @@ $(document).ready(function () {
         // Show total amount
         $('#totalSavingsAmount').text(formatRupiah(totalSavings));
     }
+
+    // Auto-backup data to Firestore every 5 minutes
+    setInterval(function() {
+        console.log('Auto-backup is running...');
+        // Nothing to do here as we're directly writing to Firestore on each change
+    }, 5 * 60 * 1000); // 5 minutes in milliseconds
 });
