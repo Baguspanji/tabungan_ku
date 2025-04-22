@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>Login - Aplikasi Tabungan</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <!-- Replaced Tailwind CDN with locally compiled CSS -->
+    <link rel="stylesheet" href="dist/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Alert container */
+        #alertContainer {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 60;
+            max-width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        /* Animation */
+        @keyframes slideInRight {
+            0% {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutRight {
+            0% {
+                transform: translateX(0);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <main class="flex-grow flex justify-center items-center px-4 py-12">
+        <div class="max-w-md w-full bg-white shadow-lg rounded-lg overflow-hidden">
+            <div class="bg-blue-600 p-6 text-white text-center">
+                <div class="flex justify-center mb-3">
+                    <i class="fas fa-piggy-bank text-4xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold">Aplikasi Tabungan</h1>
+                <p class="text-blue-100 mt-1">Masuk untuk melanjutkan</p>
+            </div>
+
+            <form id="loginForm" class="p-6 space-y-4">
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                    <div class="relative">
+                        <div class="absolute left-3 top-3 text-gray-400">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <input type="text" id="username" name="username" required
+                            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Masukkan username">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <div class="relative">
+                        <div class="absolute left-3 top-3 text-gray-400">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <input type="password" id="password" name="password" required
+                            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Masukkan password">
+                        <div class="absolute right-3 top-3 text-gray-400 cursor-pointer" id="togglePassword">
+                            <i class="fas fa-eye"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition flex items-center justify-center">
+                        <span id="loginText">Masuk</span>
+                        <span id="loadingIcon" class="hidden ml-2">
+                            <i class="fas fa-circle-notch fa-spin"></i>
+                        </span>
+                    </button>
+                </div>
+            </form>
+
+            <div class="bg-gray-50 p-4 text-center text-sm text-gray-600 border-t border-gray-200">
+                © 2025 Aplikasi Tabungan. All rights reserved.
+            </div>
+        </div>
+    </main>
+
+    <div id="alertContainer" aria-live="assertive" aria-atomic="true"></div>
+    
+    <script src="firebase-config.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Check if user is already logged in
+            firebase.auth().onAuthStateChanged(function(user) {
+                if (user) {
+                    // User is signed in, redirect to index.html
+                    window.location.href = "index.html";
+                }
+            });
+
+            // Show/Hide Password Toggle
+            $("#togglePassword").click(function() {
+                const passwordInput = $("#password");
+                const passwordIcon = $(this).find('i');
+                
+                if (passwordInput.attr("type") === "password") {
+                    passwordInput.attr("type", "text");
+                    passwordIcon.removeClass("fa-eye").addClass("fa-eye-slash");
+                } else {
+                    passwordInput.attr("type", "password");
+                    passwordIcon.removeClass("fa-eye-slash").addClass("fa-eye");
+                }
+            });
+
+            // Show alert function
+            function showAlert(message, type = 'info', duration = 4000) {
+                const id = `alert-${Date.now()}`;
+                const colors = {
+                    info: 'bg-blue-100 text-blue-800',
+                    success: 'bg-green-100 text-green-800',
+                    error: 'bg-red-100 text-red-800',
+                    warning: 'bg-yellow-100 text-yellow-800',
+                };
+                const icons = {
+                    info: '<i class="fas fa-info-circle mr-2"></i>',
+                    success: '<i class="fas fa-check-circle mr-2"></i>',
+                    error: '<i class="fas fa-exclamation-circle mr-2"></i>',
+                    warning: '<i class="fas fa-exclamation-triangle mr-2"></i>',
+                };
+
+                const alert = $(`
+                    <div id="${id}" role="alert" class="flex items-center ${colors[type] || colors.info} rounded-md shadow-md p-3 animate-[slideInRight_0.3s_ease_forwards]">
+                        <span class="flex-shrink-0 text-lg">${icons[type] || icons.info}</span>
+                        <p class="flex-grow text-sm font-medium">${message}</p>
+                        <button aria-label="Tutup notifikasi" class="ml-3 text-lg font-bold focus:outline-none hover:text-opacity-70 transition" type="button">&times;</button>
+                    </div>
+                `);
+
+                $('#alertContainer').append(alert);
+
+                // Close button event
+                alert.find('button').on('click', function () {
+                    closeAlert(alert);
+                });
+
+                // Auto close after duration
+                setTimeout(function () {
+                    closeAlert(alert);
+                }, duration);
+            }
+
+            // Close alert with animation
+            function closeAlert(alert) {
+                alert.css('animation', 'slideOutRight 0.3s ease forwards');
+                alert.on('animationend', function () {
+                    $(this).remove();
+                });
+            }
+
+            // Login Form Submit Handler
+            $("#loginForm").on("submit", function(e) {
+                e.preventDefault();
+                
+                const username = $("#username").val().trim();
+                const password = $("#password").val();
+                
+                // Show loading state
+                $("#loginText").text("Memproses...");
+                $("#loadingIcon").removeClass("hidden");
+                
+                // Use Firebase email auth with username as email
+                const email = `${username}@tabungan.app`; // Creating a mock email
+                
+                firebase.auth().signInWithEmailAndPassword(email, password)
+                    .then((userCredential) => {
+                        // Login successful
+                        showAlert("Login berhasil. Mengalihkan...", "success");
+                        setTimeout(() => {
+                            window.location.href = "index.html";
+                        }, 1000);
+                    })
+                    .catch((error) => {
+                        // Reset loading state
+                        $("#loginText").text("Masuk");
+                        $("#loadingIcon").addClass("hidden");
+                        
+                        // Handle errors
+                        console.error("Error during login:", error);
+                        let errorMessage;
+                        
+                        switch (error.code) {
+                            case 'auth/user-not-found':
+                            case 'auth/wrong-password':
+                                errorMessage = "Username atau password salah.";
+                                break;
+                            case 'auth/too-many-requests':
+                                errorMessage = "Terlalu banyak percobaan login. Coba lagi nanti.";
+                                break;
+                            default:
+                                errorMessage = "Terjadi kesalahan saat login. Silakan coba lagi.";
+                        }
+                        
+                        showAlert(errorMessage, "error");
+                    });
+            });
+
+            // Set focus on username field when page loads
+            $("#username").focus();
+        });
+    </script>
+</body>
+
+</html>

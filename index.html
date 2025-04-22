@@ -1,0 +1,461 @@
+<html lang="id" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>Aplikasi Tabungan - Dengan Tab Responsif & Interaktif</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <!-- Replaced Tailwind CDN with locally compiled CSS -->
+    <link rel="stylesheet" href="dist/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Scrollbar for horizontal tab on mobile */
+        nav ul {
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: #3b82f6 #e5e7eb;
+        }
+
+        nav ul::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        nav ul::-webkit-scrollbar-track {
+            background: #e5e7eb;
+            border-radius: 3px;
+        }
+
+        nav ul::-webkit-scrollbar-thumb {
+            background-color: #3b82f6;
+            border-radius: 3px;
+        }
+
+        /* Focus visible for accessibility */
+        [role="tab"]:focus-visible {
+            outline: 3px solid #2563eb;
+            outline-offset: 2px;
+        }
+
+        /* Alert container */
+        #alertContainer {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 60;
+            max-width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        /* Animation */
+        @keyframes slideInRight {
+            0% {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutRight {
+            0% {
+                transform: translateX(0);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        
+        /* Loading screen */
+        #authLoadingScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #f9fafb;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <!-- Authentication Loading Screen -->
+    <div id="authLoadingScreen">
+        <div class="flex justify-center mb-4">
+            <i class="fas fa-spinner fa-spin text-blue-500 text-5xl"></i>
+        </div>
+        <p class="text-center text-gray-500">Memverifikasi...</p>
+    </div>
+
+    <header class="bg-blue-600 text-white shadow-md sticky top-0 z-30">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+            <h1 class="text-2xl font-semibold flex items-center gap-2 select-none">
+                <i class="fas fa-piggy-bank"></i> Aplikasi Tabungan
+            </h1>
+            <div class="flex items-center gap-4">
+                <span id="userDisplay" class="hidden md:flex items-center gap-2">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="usernameDisplay" class="font-medium"></span>
+                </span>
+                <button id="btnLogout" class="text-white hover:text-blue-100 transition">
+                    <i class="fas fa-sign-out-alt mr-1"></i>
+                    <span class="hidden sm:inline">Logout</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-5xl mx-auto px-4 py-6 w-full flex flex-col">
+        <!-- Tab Menus -->
+
+        <section id="panel-member" role="tabpanel" aria-labelledby="tab-member" tabindex="0"
+            class="tab-panel focus:outline-none">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold mb-4 text-blue-700">Daftar Member</h2>
+                <button id="btnAddMember"
+                    class="bg-blue-600 hover:bg-blue-700 text-white text-base font-semibold py-2 px-4 rounded-md transition flex items-center space-x-2">
+                    <i class="fas fa-plus"></i>
+                    <span class="hidden sm:inline">
+                        Tambah Data Member
+                    </span>
+                </button>
+            </div>
+
+            <!-- Member search and filter controls -->
+            <div class="mb-4">
+                <div class="mx-auto flex flex-col sm:flex-row gap-3 justify-between items-start">
+                    <div class="w-full sm:w-auto">
+                        <div class="relative">
+                            <input id="memberSearch" type="text" placeholder="Cari nama member..."
+                                class="w-full bg-white pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <div class="absolute left-3 top-2.5 text-gray-400">
+                                <i class="fas fa-search"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-between gap-2 w-full sm:w-auto">
+                        <select id="sortMembers"
+                            class="bg-white border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="name-asc">Nama (A-Z)</option>
+                            <option value="name-desc">Nama (Z-A)</option>
+                        </select>
+                        <button id="btnFilterMembers"
+                            class="bg-blue-100 hover:bg-blue-200 text-blue-800 font-medium py-2 px-4 rounded-lg transition flex items-center space-x-1">
+                            <i class="fas fa-filter"></i>
+                            <span class="hidden sm:inline">Filter</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Member filter panel -->
+                <div id="memberFilterPanel" class="mt-4 p-4 bg-blue-50 rounded-lg hidden">
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <div class="w-full">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Catatan Berisi</label>
+                            <input type="text" id="filterNotes" placeholder="Kata kunci dalam catatan"
+                                class="w-full bg-white border border-gray-300 rounded-md py-2 px-3">
+                        </div>
+                    </div>
+                    <div class="flex justify-end mt-4 gap-2">
+                        <button id="btnResetMemberFilters"
+                            class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-1.5 px-4 rounded transition">
+                            Reset
+                        </button>
+                        <button id="btnApplyMemberFilters"
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-1.5 px-4 rounded transition">
+                            Terapkan
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="membersList" class="space-y-4 mx-auto">
+                <p class="text-center text-gray-500">Belum ada member terdaftar.</p>
+            </div>
+
+            <!-- Pagination controls -->
+            <div id="paginationControls" class="flex justify-center items-center mt-4 space-x-2 hidden"></div>
+            <div id="memberCounter" class="text-center text-gray-500 mt-2"></div>
+
+            <!-- Modal for adding new members -->
+            <div id="memberModal"
+                class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+                <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-semibold text-blue-700">Daftar Member Baru</h3>
+                        <button id="closeModal" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <form id="memberForm" class="space-y-4">
+                        <div>
+                            <label for="memberName" class="block text-gray-700 font-medium mb-1">Nama Member</label>
+                            <input type="text" id="memberName" name="memberName" required
+                                placeholder="Masukkan nama lengkap"
+                                class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                autocomplete="off" />
+                        </div>
+                        <div>
+                            <label for="memberNote" class="block text-gray-700 font-medium mb-1">Catatan
+                                (opsional)</label>
+                            <textarea id="memberNote" name="memberNote" rows="3"
+                                placeholder="Tambahkan catatan untuk member ini"
+                                class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                autocomplete="off"></textarea>
+                        </div>
+                        <button type="submit"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-md transition">
+                            Daftarkan Member
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Modal for editing members -->
+            <div id="editMemberModal"
+                class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+                <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-semibold text-blue-700">Edit Member</h3>
+                        <button id="closeEditModal" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <form id="editMemberForm" class="space-y-4">
+                        <input type="hidden" id="editMemberIndex">
+                        <div>
+                            <label for="editMemberName" class="block text-gray-700 font-medium mb-1">Nama Member</label>
+                            <input type="text" id="editMemberName" name="editMemberName" required
+                                placeholder="Masukkan nama lengkap"
+                                class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                autocomplete="off" />
+                        </div>
+                        <div>
+                            <label for="editMemberNote" class="block text-gray-700 font-medium mb-1">Catatan
+                                (opsional)</label>
+                            <textarea id="editMemberNote" name="editMemberNote" rows="3"
+                                placeholder="Tambahkan catatan untuk member ini"
+                                class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                autocomplete="off"></textarea>
+                        </div>
+                        <button type="submit"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-md transition">
+                            Simpan Perubahan
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Confirmation Modal for Delete Member -->
+            <div id="deleteMemberModal"
+                class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+                <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+                    <div class="mb-4">
+                        <h3 class="text-xl font-semibold text-red-700">Konfirmasi Hapus Member</h3>
+                    </div>
+                    <p class="text-gray-700 mb-6">Anda yakin ingin menghapus member <span id="deleteMemberName"
+                            class="font-semibold"></span>? Semua data tabungan terkait juga akan dihapus.</p>
+                    <div class="flex gap-3 justify-end">
+                        <button id="cancelDelete"
+                            class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-md transition">
+                            Batal
+                        </button>
+                        <button id="confirmDelete"
+                            class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-md transition">
+                            Hapus
+                        </button>
+                    </div>
+                    <input type="hidden" id="deleteMemberIndex">
+                </div>
+            </div>
+
+            <!-- Modal for Detail Savings -->
+            <div id="detailSavingsModal"
+                class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+                <div class="bg-white p-6 rounded-lg shadow-xl max-w-xl w-full max-h-[90vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-semibold text-blue-700">Detail Tabungan <span id="savingsMemberName"></span></h3>
+                        <button id="closeDetailSavingsModal" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Form for adding savings directly in detail view -->
+                    <div class="mb-6 bg-blue-50 p-4 rounded-lg">
+                        <h4 class="text-md font-semibold text-blue-700 mb-3">Tambah Tabungan</h4>
+                        <form id="addSavingsDetailForm" class="space-y-3">
+                            <input type="hidden" id="detailSavingsMemberIndex">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label for="detailAmount" class="block text-sm font-medium text-gray-700 mb-1">Jumlah (Rp)</label>
+                                    <input type="number" id="detailAmount" required min="1000" step="1000" placeholder="Masukkan jumlah"
+                                        class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <label for="detailSavingType" class="block text-sm font-medium text-gray-700 mb-1">Jenis</label>
+                                    <select id="detailSavingType" required
+                                        class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="tabungan">Tabungan</option>
+                                        <option value="jimpitan">Jimpitan</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="flex justify-start mt-4">
+                                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md w-full sm:w-auto transition">
+                                    <i class="fas fa-plus mr-1"></i> Tambah Tabungan
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div id="savingsDetailContent" class="space-y-4">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left text-gray-700">
+                                <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-3">Tanggal</th>
+                                        <th scope="col" class="px-4 py-3">Jenis</th>
+                                        <th scope="col" class="px-4 py-3 text-right">Jumlah</th>
+                                        <th scope="col" class="px-4 py-3 text-right">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="savingsDetailTable">
+                                    <!-- Savings details will be inserted here dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-gray-200">
+                            <p class="text-right font-medium">Total: <span id="totalSavingsAmount" class="text-blue-700 font-semibold"></span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal for Edit Savings -->
+            <div id="editSavingsModal"
+                class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+                <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-semibold text-blue-700">Edit Tabungan</h3>
+                        <button id="closeEditSavingsModal" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <form id="editSavingsForm" class="space-y-4">
+                        <input type="hidden" id="editSavingsMemberIndex">
+                        <input type="hidden" id="editSavingsIndex">
+                        
+                        <div>
+                            <label for="editSavingsAmount" class="block text-gray-700 font-medium mb-1">Jumlah (Rp)</label>
+                            <input type="number" id="editSavingsAmount" name="editSavingsAmount" min="1000" step="1000" required
+                                class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        
+                        <div>
+                            <label for="editSavingsType" class="block text-gray-700 font-medium mb-1">Jenis</label>
+                            <select id="editSavingsType" name="editSavingsType" required
+                                class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="tabungan">Tabungan</option>
+                                <option value="jimpitan">Jimpitan</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-md transition">
+                            Simpan Perubahan
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Confirmation Modal for Delete Savings -->
+            <div id="deleteSavingsModal"
+                class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+                <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+                    <div class="mb-4">
+                        <h3 class="text-xl font-semibold text-red-700">Konfirmasi Hapus Tabungan</h3>
+                    </div>
+                    <p class="text-gray-700 mb-6">Anda yakin ingin menghapus catatan tabungan ini?</p>
+                    <div class="flex gap-3 justify-end">
+                        <button id="cancelDeleteSavings"
+                            class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-md transition">
+                            Batal
+                        </button>
+                        <button id="confirmDeleteSavings"
+                            class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-md transition">
+                            Hapus
+                        </button>
+                    </div>
+                    <input type="hidden" id="deleteSavingsMemberIndex">
+                    <input type="hidden" id="deleteSavingsIndex">
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-blue-600 text-white py-4 mt-auto">
+        <div class="max-w-5xl mx-auto px-4 text-center text-sm select-none">
+            &copy; 2025 Aplikasi Tabungan. All rights reserved.
+        </div>
+    </footer>
+
+    <div id="alertContainer" aria-live="assertive" aria-atomic="true"></div>
+
+    <script src="firebase-config.js"></script>
+    <script src="app.js"></script>
+    
+    <!-- Authentication Script -->
+    <script>
+        $(document).ready(function() {
+            // Check authentication state
+            firebase.auth().onAuthStateChanged(function(user) {
+                if (user) {
+                    // User is signed in
+                    const username = user.email.split('@')[0]; // Extract username from email
+                    $('#usernameDisplay').text(username);
+                    $('#userDisplay').removeClass('hidden');
+                    $('#authLoadingScreen').fadeOut(500);
+                } else {
+                    // User is not signed in, redirect to login page
+                    window.location.href = "login.html";
+                }
+            });
+            
+            // Logout functionality
+            $('#btnLogout').click(function() {
+                firebase.auth().signOut().then(function() {
+                    // Sign-out successful, redirect to login page
+                    window.location.href = "login.html";
+                }).catch(function(error) {
+                    console.error("Sign out error:", error);
+                    showAlert("Gagal keluar dari aplikasi. Silakan coba lagi.", "error");
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>
