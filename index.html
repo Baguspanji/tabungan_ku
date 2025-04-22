@@ -12,6 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
     <style>
         body {
@@ -81,15 +82,48 @@
                 opacity: 0;
             }
         }
+        
+        /* Loading screen */
+        #authLoadingScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #f9fafb;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
     </style>
 </head>
 
 <body class="bg-gray-50 min-h-screen flex flex-col">
+    <!-- Authentication Loading Screen -->
+    <div id="authLoadingScreen">
+        <div class="flex justify-center mb-4">
+            <i class="fas fa-spinner fa-spin text-blue-500 text-5xl"></i>
+        </div>
+        <p class="text-center text-gray-500">Memverifikasi...</p>
+    </div>
+
     <header class="bg-blue-600 text-white shadow-md sticky top-0 z-30">
         <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
             <h1 class="text-2xl font-semibold flex items-center gap-2 select-none">
                 <i class="fas fa-piggy-bank"></i> Aplikasi Tabungan
             </h1>
+            <div class="flex items-center gap-4">
+                <span id="userDisplay" class="hidden md:flex items-center gap-2">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="usernameDisplay" class="font-medium"></span>
+                </span>
+                <button id="btnLogout" class="text-white hover:text-blue-100 transition">
+                    <i class="fas fa-sign-out-alt mr-1"></i>
+                    <span class="hidden sm:inline">Logout</span>
+                </button>
+            </div>
         </div>
     </header>
 
@@ -391,6 +425,36 @@
 
     <script src="firebase-config.js"></script>
     <script src="app.js"></script>
+    
+    <!-- Authentication Script -->
+    <script>
+        $(document).ready(function() {
+            // Check authentication state
+            firebase.auth().onAuthStateChanged(function(user) {
+                if (user) {
+                    // User is signed in
+                    const username = user.email.split('@')[0]; // Extract username from email
+                    $('#usernameDisplay').text(username);
+                    $('#userDisplay').removeClass('hidden');
+                    $('#authLoadingScreen').fadeOut(500);
+                } else {
+                    // User is not signed in, redirect to login page
+                    window.location.href = "login.html";
+                }
+            });
+            
+            // Logout functionality
+            $('#btnLogout').click(function() {
+                firebase.auth().signOut().then(function() {
+                    // Sign-out successful, redirect to login page
+                    window.location.href = "login.html";
+                }).catch(function(error) {
+                    console.error("Sign out error:", error);
+                    showAlert("Gagal keluar dari aplikasi. Silakan coba lagi.", "error");
+                });
+            });
+        });
+    </script>
 </body>
 
 </html>
