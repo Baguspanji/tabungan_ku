@@ -1,0 +1,1899 @@
+<html lang="id" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>Aplikasi Tabungan - Dengan Tab Responsif & Interaktif</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Scrollbar for horizontal tab on mobile */
+        nav ul {
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: #3b82f6 #e5e7eb;
+        }
+
+        nav ul::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        nav ul::-webkit-scrollbar-track {
+            background: #e5e7eb;
+            border-radius: 3px;
+        }
+
+        nav ul::-webkit-scrollbar-thumb {
+            background-color: #3b82f6;
+            border-radius: 3px;
+        }
+
+        /* Focus visible for accessibility */
+        [role="tab"]:focus-visible {
+            outline: 3px solid #2563eb;
+            outline-offset: 2px;
+        }
+
+        /* Alert container */
+        #alertContainer {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 60;
+            max-width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        /* Animation */
+        @keyframes slideInRight {
+            0% {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutRight {
+            0% {
+                transform: translateX(0);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <header class="bg-blue-600 text-white shadow-md sticky top-0 z-30">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+            <h1 class="text-2xl font-semibold flex items-center gap-2 select-none">
+                <i class="fas fa-piggy-bank"></i> Aplikasi Tabungan
+            </h1>
+            <button id="btnOpenTabs" aria-label="Buka menu tab"
+                class="sm:hidden p-2 rounded-md hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-white">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-5xl mx-auto px-4 py-6 w-full flex flex-col">
+        <!-- Tab Menus -->
+        <nav class="mb-6 md:border-b md:border-gray-300 relative">
+            <ul id="tabsList"
+                class="hidden md:flex md:flex-nowrap overflow-x-auto no-scrollbar text-sm font-medium text-center text-gray-500 scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-200">
+                <li class="mr-2 flex-shrink-0">
+                    <button id="tab-member"
+                        class="inline-block p-4 border-b-2 rounded-t-lg hover:text-blue-600 hover:border-blue-600 focus:outline-none whitespace-nowrap"
+                        aria-controls="panel-member" aria-selected="true" role="tab" type="button">
+                        Daftar Member
+                    </button>
+                </li>
+                <li class="mr-2 flex-shrink-0">
+                    <button id="tab-history"
+                        class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-blue-600 hover:border-blue-600 focus:outline-none whitespace-nowrap"
+                        aria-controls="panel-history" aria-selected="false" role="tab" type="button">
+                        History Tabungan
+                    </button>
+                </li>
+            </ul>
+            <!-- Mobile tab overlay -->
+            <div id="mobileTabsOverlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-40" tabindex="-1"
+                aria-hidden="true"></div>
+            <div id="mobileTabsMenu"
+                class="fixed top-16 left-0 right-0 bg-white shadow-lg rounded-b-lg max-h-[70vh] overflow-y-auto hidden z-50">
+                <ul class="flex flex-col divide-y divide-gray-200">
+                    <li>
+                        <button id="tab-member-mobile"
+                            class="w-full text-left px-6 py-4 text-gray-700 hover:bg-blue-50 focus:outline-none focus:bg-blue-100"
+                            aria-controls="panel-member" aria-selected="false" role="tab" type="button">
+                            Daftar Member
+                        </button>
+                    </li>
+                    <li>
+                        <button id="tab-history-mobile"
+                            class="w-full text-left px-6 py-4 text-gray-700 hover:bg-blue-50 focus:outline-none focus:bg-blue-100"
+                            aria-controls="panel-history" aria-selected="false" role="tab" type="button">
+                            History Tabungan
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <section id="panel-member" role="tabpanel" aria-labelledby="tab-member" tabindex="0"
+            class="tab-panel focus:outline-none">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold mb-4 text-blue-700">Daftar Member</h2>
+                <button id="btnAddMember"
+                    class="bg-blue-600 hover:bg-blue-700 text-white text-base font-semibold py-2 px-4 rounded-md transition flex items-center space-x-2">
+                    <i class="fas fa-plus"></i>
+                    <span class="hidden sm:inline">
+                        Tambah Data Member
+                    </span>
+                </button>
+            </div>
+
+            <div id="membersList" class="space-y-4 mx-auto">
+                <p class="text-center text-gray-500">Belum ada member terdaftar.</p>
+            </div>
+
+            <!-- Pagination controls -->
+            <div id="paginationControls" class="flex justify-center items-center mt-4 space-x-2 hidden"></div>
+            <div id="memberCounter" class="text-center text-gray-500 mt-2"></div>
+
+            <!-- Modal for adding new members -->
+            <div id="memberModal"
+                class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+                <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-semibold text-blue-700">Daftar Member Baru</h3>
+                        <button id="closeModal" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <form id="memberForm" class="space-y-4">
+                        <div>
+                            <label for="memberName" class="block text-gray-700 font-medium mb-1">Nama Member</label>
+                            <input type="text" id="memberName" name="memberName" required
+                                placeholder="Masukkan nama lengkap"
+                                class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                autocomplete="off" />
+                        </div>
+                        <div>
+                            <label for="targetTabungan" class="block text-gray-700 font-medium mb-1">Target Jumlah
+                                Tabungan (Rp)</label>
+                            <input type="number" id="targetTabungan" name="targetTabungan" min="0" required
+                                placeholder="Masukkan target tabungan"
+                                class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                autocomplete="off" />
+                        </div>
+                        <div>
+                            <label for="memberNote" class="block text-gray-700 font-medium mb-1">Catatan (opsional)</label>
+                            <textarea id="memberNote" name="memberNote" rows="3" placeholder="Tambahkan catatan untuk member ini"
+                                class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                autocomplete="off"></textarea>
+                        </div>
+                        <button type="submit"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-md transition">
+                            Daftarkan Member
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Modal for editing members -->
+            <div id="editMemberModal"
+                class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+                <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-semibold text-blue-700">Edit Member</h3>
+                        <button id="closeEditModal" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <form id="editMemberForm" class="space-y-4">
+                        <input type="hidden" id="editMemberIndex">
+                        <div>
+                            <label for="editMemberName" class="block text-gray-700 font-medium mb-1">Nama Member</label>
+                            <input type="text" id="editMemberName" name="editMemberName" required
+                                placeholder="Masukkan nama lengkap"
+                                class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                autocomplete="off" />
+                        </div>
+                        <div>
+                            <label for="editTargetTabungan" class="block text-gray-700 font-medium mb-1">Target Jumlah
+                                Tabungan (Rp)</label>
+                            <input type="number" id="editTargetTabungan" name="editTargetTabungan" min="0" required
+                                placeholder="Masukkan target tabungan"
+                                class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                autocomplete="off" />
+                        </div>
+                        <div>
+                            <label for="editMemberNote" class="block text-gray-700 font-medium mb-1">Catatan (opsional)</label>
+                            <textarea id="editMemberNote" name="editMemberNote" rows="3" placeholder="Tambahkan catatan untuk member ini"
+                                class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                autocomplete="off"></textarea>
+                        </div>
+                        <button type="submit"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-md transition">
+                            Simpan Perubahan
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Confirmation Modal for Delete Member -->
+            <div id="deleteMemberModal" 
+                class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+                <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+                    <div class="mb-4">
+                        <h3 class="text-xl font-semibold text-red-700">Konfirmasi Hapus Member</h3>
+                    </div>
+                    <p class="text-gray-700 mb-6">Anda yakin ingin menghapus member <span id="deleteMemberName" class="font-semibold"></span>? Semua data tabungan terkait juga akan dihapus.</p>
+                    <div class="flex gap-3 justify-end">
+                        <button id="cancelDelete" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-md transition">
+                            Batal
+                        </button>
+                        <button id="confirmDelete" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-md transition">
+                            Hapus
+                        </button>
+                    </div>
+                    <input type="hidden" id="deleteMemberIndex">
+                </div>
+            </div>
+        </section>
+
+        <section id="panel-history" role="tabpanel" aria-labelledby="tab-history" tabindex="0"
+            class="tab-panel hidden focus:outline-none">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold mb-4 text-blue-700">History Tabungan</h2>
+                <button id="btnAddSavings"
+                    class="bg-green-600 hover:bg-green-700 text-white text-base font-semibold py-2 px-4 rounded-md transition flex items-center space-x-2">
+                    <i class="fas fa-plus"></i>
+                    <span class="hidden sm:inline">
+                        Tambah Tabungan
+                    </span>
+                </button>
+            </div>
+            <div id="historyList" class="overflow-x-auto bg-white rounded-lg shadow-md max-w-5xl mx-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-blue-100">
+                        <tr>
+                            <th scope="col"
+                                class="px-4 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">
+                                Nama Member</th>
+                            <th scope="col"
+                                class="px-4 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">
+                                Tanggal</th>
+                            <th scope="col"
+                                class="px-4 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">
+                                Jumlah Tabungan (Rp)</th>
+                            <th scope="col"
+                                class="px-4 py-3 text-center text-xs font-semibold text-blue-700 uppercase tracking-wider">
+                                Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody" class="divide-y divide-gray-100">
+                        <tr>
+                            <td colspan="3" class="text-center py-6 text-gray-500">Belum ada data tabungan.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Modal for adding savings -->
+            <div id="savingsModal"
+                class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+                <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-semibold text-green-700">Tambah Tabungan</h3>
+                        <button id="closeSavingsModal" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <form id="savingsForm" class="space-y-4">
+                        <div>
+                            <label for="selectMember" class="block text-gray-700 font-medium mb-1">Pilih Member</label>
+                            <select id="selectMember" name="selectMember" required
+                                class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="" disabled selected>Pilih member</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="amount" class="block text-gray-700 font-medium mb-1">Jumlah Tabungan
+                                (Rp)</label>
+                            <input type="number" id="amount" name="amount" min="1" required
+                                placeholder="Masukkan jumlah tabungan"
+                                class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                                autocomplete="off" />
+                        </div>
+                        <button type="submit"
+                            class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-md transition">
+                            Tambah Tabungan
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Modal for editing savings history -->
+            <div id="editHistoryModal"
+                class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+                <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-semibold text-blue-700">Edit Data Tabungan</h3>
+                        <button id="closeEditHistoryModal" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <form id="editHistoryForm" class="space-y-4">
+                        <input type="hidden" id="editHistoryMember">
+                        <input type="hidden" id="editHistoryDate">
+                        <div>
+                            <label for="editHistoryAmount" class="block text-gray-700 font-medium mb-1">Jumlah Tabungan (Rp)</label>
+                            <input type="number" id="editHistoryAmount" name="editHistoryAmount" min="1" required
+                                placeholder="Masukkan jumlah tabungan"
+                                class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                autocomplete="off" />
+                        </div>
+                        <button type="submit"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-md transition">
+                            Simpan Perubahan
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Confirmation Modal for Delete History -->
+            <div id="deleteHistoryModal" 
+                class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+                <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+                    <div class="mb-4">
+                        <h3 class="text-xl font-semibold text-red-700">Konfirmasi Hapus Data Tabungan</h3>
+                    </div>
+                    <p class="text-gray-700 mb-6">Anda yakin ingin menghapus data tabungan dari <span id="deleteHistoryMember" class="font-semibold"></span>?</p>
+                    <div class="flex gap-3 justify-end">
+                        <button id="cancelDeleteHistory" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-md transition">
+                            Batal
+                        </button>
+                        <button id="confirmDeleteHistory" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-md transition">
+                            Hapus
+                        </button>
+                    </div>
+                    <input type="hidden" id="deleteHistoryMemberName">
+                    <input type="hidden" id="deleteHistoryDate">
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-blue-600 text-white py-4 mt-auto">
+        <div class="max-w-5xl mx-auto px-4 text-center text-sm select-none">
+            &copy; 2024 Aplikasi Tabungan. All rights reserved.
+        </div>
+    </footer>
+
+    <div id="alertContainer" aria-live="assertive" aria-atomic="true"></div>
+
+    <script>
+        $(document).ready(function () {
+            // Data structure to hold members and their savings history
+            const members = [
+                {
+                    name: 'John Doe',
+                    target: 5000000,
+                    savings: [
+                        { date: '2024-01-01', amount: 1000000 },
+                        { date: '2024-02-01', amount: 2000000 },
+                    ],
+                },
+                {
+                    name: 'Jane Smith',
+                    target: 3000000,
+                    savings: [
+                        { date: '2024-01-15', amount: 500000 },
+                        { date: '2024-02-15', amount: 1000000 },
+                    ],
+                },
+                {
+                    name: 'Ahmad Fauzi',
+                    target: 10000000,
+                    savings: [
+                        { date: '2024-02-03', amount: 750000 },
+                        { date: '2024-03-05', amount: 1200000 },
+                        { date: '2024-04-08', amount: 900000 },
+                    ],
+                },
+                {
+                    name: 'Siti Rahayu',
+                    target: 7500000,
+                    savings: [
+                        { date: '2024-01-22', amount: 1500000 },
+                        { date: '2024-03-15', amount: 2000000 },
+                    ],
+                },
+                {
+                    name: 'Budi Santoso',
+                    target: 15000000,
+                    savings: [
+                        { date: '2024-01-10', amount: 3000000 },
+                        { date: '2024-02-20', amount: 2500000 },
+                        { date: '2024-03-30', amount: 4000000 },
+                    ],
+                },
+                {
+                    name: 'Dewi Lestari',
+                    target: 5000000,
+                    savings: [
+                        { date: '2024-02-05', amount: 800000 },
+                        { date: '2024-03-07', amount: 1200000 },
+                    ],
+                },
+                {
+                    name: 'Rizki Pratama',
+                    target: 8000000,
+                    savings: [
+                        { date: '2024-01-18', amount: 2000000 },
+                        { date: '2024-03-20', amount: 1750000 },
+                    ],
+                },
+                {
+                    name: 'Anisa Putri',
+                    target: 6000000,
+                    savings: [
+                        { date: '2024-02-12', amount: 1250000 },
+                        { date: '2024-04-01', amount: 1800000 },
+                        { date: '2024-04-15', amount: 900000 },
+                    ],
+                },
+                {
+                    name: 'Dimas Wahyu',
+                    target: 12000000,
+                    savings: [
+                        { date: '2024-01-05', amount: 2500000 },
+                        { date: '2024-02-28', amount: 3500000 },
+                    ],
+                },
+                {
+                    name: 'Rani Maharani',
+                    target: 9000000,
+                    savings: [
+                        { date: '2024-03-10', amount: 1700000 },
+                        { date: '2024-04-10', amount: 2300000 },
+                    ],
+                },
+                {
+                    name: 'Hendra Gunawan',
+                    target: 20000000,
+                    savings: [
+                        { date: '2024-01-25', amount: 4000000 },
+                        { date: '2024-03-25', amount: 5000000 },
+                        { date: '2024-04-12', amount: 3500000 },
+                    ],
+                },
+                {
+                    name: 'Lia Kusuma',
+                    target: 4500000,
+                    savings: [
+                        { date: '2024-02-08', amount: 750000 },
+                        { date: '2024-03-12', amount: 1000000 },
+                    ],
+                },
+                {
+                    name: 'Arif Rahman',
+                    target: 7000000,
+                    savings: [
+                        { date: '2024-01-30', amount: 1500000 },
+                        { date: '2024-03-02', amount: 1200000 },
+                        { date: '2024-04-05', amount: 1800000 },
+                    ],
+                },
+                {
+                    name: 'Nadia Sari',
+                    target: 5500000,
+                    savings: [
+                        { date: '2024-02-15', amount: 1100000 },
+                        { date: '2024-04-02', amount: 1350000 },
+                    ],
+                },
+                {
+                    name: 'Eko Prasetyo',
+                    target: 10000000,
+                    savings: [
+                        { date: '2024-01-12', amount: 2000000 },
+                        { date: '2024-03-08', amount: 2500000 },
+                    ],
+                },
+                {
+                    name: 'Maya Indah',
+                    target: 6500000,
+                    savings: [
+                        { date: '2024-02-22', amount: 1300000 },
+                        { date: '2024-04-03', amount: 1750000 },
+                    ],
+                },
+                {
+                    name: 'Surya Adi',
+                    target: 9500000,
+                    savings: [
+                        { date: '2024-01-20', amount: 2200000 },
+                        { date: '2024-03-18', amount: 2800000 },
+                        { date: '2024-04-18', amount: 1500000 },
+                    ],
+                },
+                {
+                    name: 'Putri Wulandari',
+                    target: 4000000,
+                    savings: [
+                        { date: '2024-02-10', amount: 800000 },
+                        { date: '2024-03-22', amount: 950000 },
+                    ],
+                },
+                {
+                    name: 'Agus Purnomo',
+                    target: 11000000,
+                    savings: [
+                        { date: '2024-01-08', amount: 2500000 },
+                        { date: '2024-02-25', amount: 3000000 },
+                    ],
+                },
+                {
+                    name: 'Ratna Sari',
+                    target: 8500000,
+                    savings: [
+                        { date: '2024-03-01', amount: 1800000 },
+                        { date: '2024-04-07', amount: 2100000 },
+                        { date: '2024-04-20', amount: 1250000 },
+                    ],
+                },
+                {
+                    name: 'Irfan Maulana',
+                    target: 12500000,
+                    savings: [
+                        { date: '2024-01-15', amount: 2800000 },
+                        { date: '2024-03-17', amount: 3200000 },
+                    ],
+                },
+                {
+                    name: 'Dina Fitriani',
+                    target: 7200000,
+                    savings: [
+                        { date: '2024-02-18', amount: 1500000 },
+                        { date: '2024-04-12', amount: 1900000 },
+                    ],
+                }
+            ];
+
+            // Pagination configuration
+            const paginationConfig = {
+                membersPerPage: 5,
+                currentPage: 1,
+                totalPages: Math.ceil(members.length / 5)
+            };
+
+            // History pagination configuration
+            const historyPaginationConfig = {
+                itemsPerPage: 10,
+                currentPage: 1,
+                totalPages: 1
+            };
+
+            // Format number to Indonesian Rupiah currency format
+            function formatRupiah(number) {
+                return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(number);
+            }
+
+            // Format date to dd-mm-yyyy
+            function formatDate(date) {
+                const d = new Date(date);
+                const day = String(d.getDate()).padStart(2, '0');
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const year = d.getFullYear();
+                return `${day}-${month}-${year}`;
+            }
+
+            // Show alert function
+            function showAlert(message, type = 'info', duration = 4000) {
+                const id = `alert-${Date.now()}`;
+                const colors = {
+                    info: 'bg-blue-100 text-blue-800',
+                    success: 'bg-green-100 text-green-800',
+                    error: 'bg-red-100 text-red-800',
+                    warning: 'bg-yellow-100 text-yellow-800',
+                };
+                const icons = {
+                    info: '<i class="fas fa-info-circle mr-2"></i>',
+                    success: '<i class="fas fa-check-circle mr-2"></i>',
+                    error: '<i class="fas fa-exclamation-circle mr-2"></i>',
+                    warning: '<i class="fas fa-exclamation-triangle mr-2"></i>',
+                };
+
+                const alert = $(`
+                    <div id="${id}" role="alert" class="flex items-center ${colors[type] || colors.info} rounded-md shadow-md p-3 animate-[slideInRight_0.3s_ease_forwards]">
+                        <span class="flex-shrink-0 text-lg">${icons[type] || icons.info}</span>
+                        <p class="flex-grow text-sm font-medium">${message}</p>
+                        <button aria-label="Tutup notifikasi" class="ml-3 text-lg font-bold focus:outline-none hover:text-opacity-70 transition" type="button">&times;</button>
+                    </div>
+                `);
+
+                $('#alertContainer').append(alert);
+
+                // Close button event
+                alert.find('button').on('click', function () {
+                    closeAlert(alert);
+                });
+
+                // Auto close after duration
+                setTimeout(function () {
+                    closeAlert(alert);
+                }, duration);
+            }
+
+            // Close alert with animation
+            function closeAlert(alert) {
+                alert.css('animation', 'slideOutRight 0.3s ease forwards');
+                alert.on('animationend', function () {
+                    $(this).remove();
+                });
+            }
+
+            // Get paginated members
+            function getPaginatedMembers() {
+                const startIndex = (paginationConfig.currentPage - 1) * paginationConfig.membersPerPage;
+                const endIndex = startIndex + paginationConfig.membersPerPage;
+                return members.slice(startIndex, endIndex);
+            }
+
+            // Render pagination controls
+            function renderPagination() {
+                const totalPages = Math.ceil(members.length / paginationConfig.membersPerPage);
+                paginationConfig.totalPages = totalPages;
+                
+                if (totalPages <= 1) {
+                    $('#paginationControls').addClass('hidden');
+                    return;
+                }
+
+                $('#paginationControls').removeClass('hidden');
+                
+                let paginationHTML = '';
+                
+                // Previous button
+                paginationHTML += `
+                    <button id="prevPage" class="px-3 py-1 rounded-md flex items-center ${paginationConfig.currentPage === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-100'}"
+                    ${paginationConfig.currentPage === 1 ? 'disabled' : ''}>
+                        <i class="fas fa-chevron-left mr-1"></i> Prev
+                    </button>
+                `;
+                
+                let pages = [];
+                const currentPage = paginationConfig.currentPage;
+                
+                // Always show first page
+                pages.push(1);
+                
+                // Show ellipsis after first page if needed
+                if (currentPage > 3) {
+                    pages.push('...');
+                }
+                
+                // Show pages around current page
+                for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+                    pages.push(i);
+                }
+                
+                // Show ellipsis before last page if needed
+                if (currentPage < totalPages - 2) {
+                    pages.push('...');
+                }
+                
+                // Always show last page if there is more than one page
+                if (totalPages > 1) {
+                    pages.push(totalPages);
+                }
+                
+                // Render page numbers
+                pages.forEach(page => {
+                    if (page === '...') {
+                        paginationHTML += `
+                            <span class="px-3 py-1 text-gray-500">...</span>
+                        `;
+                    } else {
+                        paginationHTML += `
+                            <button class="page-number px-3 py-1 rounded-md ${page === currentPage ? 
+                                'bg-blue-600 text-white' : 
+                                'text-gray-700 hover:bg-blue-100'}" 
+                                data-page="${page}">
+                                ${page}
+                            </button>
+                        `;
+                    }
+                });
+                
+                // Next button
+                paginationHTML += `
+                    <button id="nextPage" class="px-3 py-1 rounded-md flex items-center ${paginationConfig.currentPage === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-100'}"
+                    ${paginationConfig.currentPage === totalPages ? 'disabled' : ''}>
+                        Next <i class="fas fa-chevron-right ml-1"></i>
+                    </button>
+                `;
+                
+                $('#paginationControls').html(paginationHTML);
+                
+                // Add event listeners for pagination
+                $('.page-number').on('click', function() {
+                    paginationConfig.currentPage = parseInt($(this).data('page'));
+                    renderMembers();
+                });
+                
+                $('#prevPage').on('click', function() {
+                    if (paginationConfig.currentPage > 1) {
+                        paginationConfig.currentPage--;
+                        renderMembers();
+                    }
+                });
+                
+                $('#nextPage').on('click', function() {
+                    if (paginationConfig.currentPage < totalPages) {
+                        paginationConfig.currentPage++;
+                        renderMembers();
+                    }
+                });
+            }
+
+            // Render members list with target and current savings
+            function renderMembers() {
+                $('#membersList').empty();
+                
+                // Get paginated members
+                const paginatedMembers = getPaginatedMembers();
+                
+                if (members.length === 0) {
+                    $('#membersList').html(`
+                        <div class="text-center py-8">
+                            <div class="flex justify-center mb-4">
+                                <i class="fas fa-users text-gray-300 text-5xl"></i>
+                            </div>
+                            <p class="text-center text-gray-500">Belum ada member terdaftar.</p>
+                            <p class="text-sm text-gray-400 mt-2">Tambahkan member baru dengan mengklik tombol "Tambah Data Member"</p>
+                        </div>
+                    `);
+                    $('#paginationControls').addClass('hidden');
+                    return;
+                }
+
+                // Show member counter
+                const startIndex = (paginationConfig.currentPage - 1) * paginationConfig.membersPerPage;
+                const endIndex = Math.min(startIndex + paginationConfig.membersPerPage, members.length);
+                $('#memberCounter').html(`Menampilkan ${startIndex + 1}-${endIndex} dari ${members.length} member`);
+
+                $.each(paginatedMembers, function (index, member) {
+                    const totalSaved = member.savings.reduce((acc, cur) => acc + cur.amount, 0);
+                    const progressPercent = member.target > 0 ? Math.min((totalSaved / member.target) * 100, 100) : 0;
+
+                    const memberCard = $(`
+                        <div class="bg-white p-4 rounded-lg shadow flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 relative">
+                            <div class="absolute top-2 right-2 flex gap-2">
+                                <button class="btn-menu-member text-gray-600 hover:text-blue-800 text-sm flex items-center gap-1 p-1" data-index="${startIndex + index}" aria-haspopup="true" aria-expanded="false">
+                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                </button>
+                                <div class="member-dropdown-menu absolute right-0 top-full mt-1 bg-white shadow-lg rounded-md py-1 z-10 hidden min-w-[120px]">
+                                    <button class="btn-edit-member w-full text-left px-4 py-2 text-blue-600 hover:bg-blue-50 flex items-center gap-2" data-index="${startIndex + index}">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </button>
+                                    <button class="btn-delete-member w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 flex items-center gap-2" data-index="${startIndex + index}">
+                                        <i class="fas fa-trash-alt"></i> Hapus
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="flex-grow">
+                                <h3 class="text-lg font-semibold text-blue-800">${member.name}</h3>
+                                <p class="text-gray-600">Target Tabungan: <span class="font-semibold">${formatRupiah(member.target)}</span></p>
+                                <p class="text-gray-600">Total Tabungan Saat Ini: <span class="font-semibold">${formatRupiah(totalSaved)}</span></p>
+                                ${member.note ? `<div class="mt-2 bg-yellow-50 p-2 rounded-md">
+                                    <p class="text-gray-700 text-sm"><i class="fas fa-sticky-note text-yellow-500 mr-1"></i> <span class="italic">${member.note}</span></p>
+                                </div>` : ''}
+                            </div>
+                            <div class="w-full sm:w-48 h-4 bg-gray-200 rounded-full overflow-hidden mt-2 sm:mt-0" aria-label="Progress tabungan ${member.name}">
+                                <div class="h-4 bg-green-500 rounded-full transition-all duration-500" style="width: ${progressPercent}%;"></div>
+                            </div>
+                        </div>
+                    `);
+
+                    $('#membersList').append(memberCard);
+                });
+
+                // Render pagination controls
+                renderPagination();
+
+                // Update select options
+                $('#selectMember').html('<option value="" disabled selected>Pilih member</option>');
+
+                $.each(members, function (index, member) {
+                    $('#selectMember').append(`<option value="${index}">${member.name}</option>`);
+                });
+            }
+
+            // Render history table with improved mobile responsiveness
+            function renderHistory() {
+                // Flatten all savings with member name
+                const allSavings = [];
+
+                $.each(members, function (_, member) {
+                    $.each(member.savings, function (_, saving) {
+                        allSavings.push({
+                            name: member.name,
+                            date: saving.date,
+                            amount: saving.amount,
+                        });
+                    });
+                });
+
+                // Sort by date descending
+                allSavings.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                if (allSavings.length === 0) {
+                    $('#historyList').html(`
+                        <div class="bg-white rounded-lg shadow-md p-6 text-center">
+                            <div class="flex justify-center mb-4">
+                                <i class="fas fa-piggy-bank text-gray-400 text-5xl"></i>
+                            </div>
+                            <p class="text-gray-500">Belum ada data tabungan.</p>
+                            <p class="text-sm text-gray-400 mt-2">Tambahkan tabungan dengan klik tombol "Tambah Tabungan"</p>
+                        </div>
+                    `);
+                    return;
+                }
+
+                // Use cards for mobile view and table for larger screens
+                let historyContent = `
+                    <div class="lg:hidden space-y-3">
+                        <!-- Mobile cards view -->
+                `;
+
+                // Add mobile cards
+                $.each(allSavings, function (_, item) {
+                    historyContent += `
+                        <div class="bg-white rounded-lg shadow p-4 flex flex-col gap-2">
+                            <div class="flex justify-between items-center">
+                                <h4 class="font-semibold text-blue-800">${item.name}</h4>
+                                <span class="text-sm text-gray-500">${formatDate(item.date)}</span>
+                            </div>
+                            <div class="flex items-center mt-1 justify-between">
+                                <span class="bg-green-100 text-green-800 text-sm font-medium py-1 px-2 rounded-full">
+                                    <i class="fas fa-plus-circle mr-1"></i> Tabungan
+                                </span>
+                                <span class="text-green-700 font-semibold">${formatRupiah(item.amount)}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                // Add table for desktop view
+                historyContent += `
+                    </div>
+                    <div class="hidden lg:block overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-blue-100">
+                                <tr>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">
+                                        Nama Member</th>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">
+                                        Tanggal</th>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">
+                                        Jumlah Tabungan (Rp)</th>
+                                    <th scope="col" class="px-4 py-3 text-center text-xs font-semibold text-blue-700 uppercase tracking-wider">
+                                        Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 bg-white">
+                `;
+
+                // Add table rows
+                $.each(allSavings, function (_, item) {
+                    historyContent += `
+                        <tr class="hover:bg-gray-50 transition">
+                            <td class="px-4 py-3 whitespace-nowrap text-gray-800">${item.name}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-gray-600">${formatDate(item.date)}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-green-700 font-semibold">${formatRupiah(item.amount)}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-center">
+                                <div class="flex justify-center gap-2">
+                                    <button class="btn-edit-history text-blue-600 hover:text-blue-800" 
+                                        data-member="${item.name}" 
+                                        data-date="${item.date}" 
+                                        data-amount="${item.amount}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn-delete-history text-red-600 hover:text-red-800" 
+                                        data-member="${item.name}" 
+                                        data-date="${item.date}">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                historyContent += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+                // Add filter and search functionality
+                const historyWithFilters = `
+                    <div class="mx-4 my-2 flex flex-col sm:flex-row gap-3 justify-between items-start">
+                        <div class="w-full sm:w-auto">
+                            <div class="relative">
+                                <input id="historySearch" type="text" placeholder="Cari nama member..." class="w-full bg-white pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <div class="absolute left-3 top-2.5 text-gray-400">
+                                    <i class="fas fa-search"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 w-full sm:w-auto">
+                            <select id="sortHistory" class="bg-white border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="date-desc">Terbaru</option>
+                                <option value="date-asc">Terlama</option>
+                                <option value="amount-desc">Jumlah Tertinggi</option>
+                                <option value="amount-asc">Jumlah Terendah</option>
+                            </select>
+                            <button id="btnFilterHistory" class="bg-blue-100 hover:bg-blue-200 text-blue-800 font-medium py-2 px-4 rounded-lg transition flex items-center space-x-1">
+                                <i class="fas fa-filter"></i>
+                                <span class="hidden sm:inline">Filter</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="historyFilterPanel" class="mx-4 mb-4 p-4 bg-blue-50 rounded-lg hidden">
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <div class="w-full sm:w-1/3">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Member</label>
+                                <select id="filterMember" class="w-full bg-white border border-gray-300 rounded-md py-2 px-3">
+                                    <option value="">Semua Member</option>
+                                </select>
+                            </div>
+                            <div class="w-full sm:w-1/3">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Dari Tanggal</label>
+                                <input type="date" id="filterDateFrom" class="w-full bg-white border border-gray-300 rounded-md py-2 px-3">
+                            </div>
+                            <div class="w-full sm:w-1/3">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Sampai Tanggal</label>
+                                <input type="date" id="filterDateTo" class="w-full bg-white border border-gray-300 rounded-md py-2 px-3">
+                            </div>
+                        </div>
+                        <div class="flex justify-end mt-4 gap-2">
+                            <button id="btnResetFilters" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-1.5 px-4 rounded transition">
+                                Reset
+                            </button>
+                            <button id="btnApplyFilters" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-1.5 px-4 rounded transition">
+                                Terapkan
+                            </button>
+                        </div>
+                    </div>
+                    ${historyContent}
+                `;
+
+                $('#historyList').html(historyWithFilters);
+
+                // Add pagination controls container after the content
+                $('#historyList').after(`
+                    <div id="historyPaginationControls" class="flex justify-center items-center mt-4 space-x-2 hidden"></div>
+                    <div id="historyCounter" class="text-center text-gray-500 mt-2"></div>
+                `);
+
+                // Populate member filter dropdown
+                const uniqueMembers = [...new Set(members.map(m => m.name))];
+                uniqueMembers.forEach(name => {
+                    $('#filterMember').append(`<option value="${name}">${name}</option>`);
+                });
+
+                // Set event handlers for filters
+                setupHistoryFilters();
+            }
+
+            // Set up history filter functionality
+            function setupHistoryFilters() {
+                // Toggle filter panel
+                $('#btnFilterHistory').on('click', function() {
+                    $('#historyFilterPanel').slideToggle(200);
+                });
+
+                // Reset filters
+                $('#btnResetFilters').on('click', function() {
+                    $('#filterMember').val('');
+                    $('#filterDateFrom').val('');
+                    $('#filterDateTo').val('');
+                    $('#historySearch').val('');
+                    renderHistory();
+                });
+
+                // Apply filters
+                $('#btnApplyFilters').on('click', function() {
+                    applyHistoryFilters();
+                });
+
+                // Search as you type
+                $('#historySearch').on('input', function() {
+                    applyHistoryFilters();
+                });
+
+                // Sort change
+                $('#sortHistory').on('change', function() {
+                    applyHistoryFilters();
+                });
+            }
+
+            // Apply history filters 
+            function applyHistoryFilters() {
+                const memberFilter = $('#filterMember').val();
+                const dateFrom = $('#filterDateFrom').val() ? new Date($('#filterDateFrom').val()) : null;
+                const dateTo = $('#filterDateTo').val() ? new Date($('#filterDateTo').val()) : null;
+                const searchText = $('#historySearch').val().toLowerCase();
+                const sortOption = $('#sortHistory').val();
+
+                // Flatten all savings with member name
+                let filteredSavings = [];
+
+                $.each(members, function (_, member) {
+                    // Filter by member if selected
+                    if (memberFilter && memberFilter !== member.name) return;
+                    
+                    // Filter by search text
+                    if (searchText && !member.name.toLowerCase().includes(searchText)) return;
+                    
+                    $.each(member.savings, function (_, saving) {
+                        const savingDate = new Date(saving.date);
+                        
+                        // Filter by date range
+                        if (dateFrom && savingDate < dateFrom) return;
+                        if (dateTo) {
+                            const nextDay = new Date(dateTo);
+                            nextDay.setDate(nextDay.getDate() + 1);
+                            if (savingDate >= nextDay) return;
+                        }
+
+                        filteredSavings.push({
+                            name: member.name,
+                            date: saving.date,
+                            amount: saving.amount,
+                        });
+                    });
+                });
+
+                // Sort the filtered results
+                switch(sortOption) {
+                    case 'date-desc':
+                        filteredSavings.sort((a, b) => new Date(b.date) - new Date(a.date));
+                        break;
+                    case 'date-asc':
+                        filteredSavings.sort((a, b) => new Date(a.date) - new Date(b.date));
+                        break;
+                    case 'amount-desc':
+                        filteredSavings.sort((a, b) => b.amount - a.amount);
+                        break;
+                    case 'amount-asc':
+                        filteredSavings.sort((a, b) => a.amount - b.amount);
+                        break;
+                }
+
+                // Render filtered results
+                renderFilteredHistory(filteredSavings);
+            }
+
+            // Render filtered history results
+            function renderFilteredHistory(filteredSavings) {
+                // Check if we have results
+                if (filteredSavings.length === 0) {
+                    $('.lg\\:hidden').html(`
+                        <div class="bg-white rounded-lg shadow-md p-6 text-center">
+                            <div class="flex justify-center mb-4">
+                                <i class="fas fa-search text-gray-400 text-5xl"></i>
+                            </div>
+                            <p class="text-gray-500">Tidak ada data tabungan yang sesuai.</p>
+                            <p class="text-sm text-gray-400 mt-2">Coba ubah filter atau kriteria pencarian.</p>
+                        </div>
+                    `);
+                    
+                    $('tbody').html(`
+                        <tr>
+                            <td colspan="4" class="text-center py-6 text-gray-500">Tidak ada data tabungan yang sesuai.</td>
+                        </tr>
+                    `);
+                    
+                    $('#historyPaginationControls').addClass('hidden');
+                    $('#historyCounter').text('');
+                    return;
+                }
+
+                // Calculate pagination
+                const totalItems = filteredSavings.length;
+                const paginatedItems = getPaginatedHistory(filteredSavings);
+                
+                // Update mobile cards
+                let mobileContent = '';
+                $.each(paginatedItems, function (_, item) {
+                    mobileContent += `
+                        <div class="bg-white rounded-lg shadow p-4 flex flex-col gap-2">
+                            <div class="flex justify-between items-center">
+                                <h4 class="font-semibold text-blue-800">${item.name}</h4>
+                                <span class="text-sm text-gray-500">${formatDate(item.date)}</span>
+                            </div>
+                            <div class="flex items-center mt-1 justify-between">
+                                <span class="bg-green-100 text-green-800 text-sm font-medium py-1 px-2 rounded-full">
+                                    <i class="fas fa-plus-circle mr-1"></i> Tabungan
+                                </span>
+                                <span class="text-green-700 font-semibold">${formatRupiah(item.amount)}</span>
+                            </div>
+                            <div class="flex justify-end mt-2 gap-2">
+                                <button class="btn-edit-history text-blue-600 hover:text-blue-800 p-1" 
+                                    data-member="${item.name}" 
+                                    data-date="${item.date}" 
+                                    data-amount="${item.amount}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn-delete-history text-red-600 hover:text-red-800 p-1" 
+                                    data-member="${item.name}" 
+                                    data-date="${item.date}">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                $('.lg\\:hidden').html(mobileContent);
+
+                // Update table rows
+                let tableContent = '';
+                $.each(paginatedItems, function (_, item) {
+                    tableContent += `
+                        <tr class="hover:bg-gray-50 transition">
+                            <td class="px-4 py-3 whitespace-nowrap text-gray-800">${item.name}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-gray-600">${formatDate(item.date)}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-green-700 font-semibold">${formatRupiah(item.amount)}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-center">
+                                <div class="flex justify-center gap-2">
+                                    <button class="btn-edit-history text-blue-600 hover:text-blue-800" 
+                                        data-member="${item.name}" 
+                                        data-date="${item.date}" 
+                                        data-amount="${item.amount}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn-delete-history text-red-600 hover:text-red-800" 
+                                        data-member="${item.name}" 
+                                        data-date="${item.date}">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+                $('tbody').html(tableContent);
+                
+                // Update history counter
+                const startIndex = (historyPaginationConfig.currentPage - 1) * historyPaginationConfig.itemsPerPage;
+                const endIndex = Math.min(startIndex + historyPaginationConfig.itemsPerPage, totalItems);
+                $('#historyCounter').text(`Menampilkan ${startIndex + 1}-${endIndex} dari ${totalItems} data tabungan`);
+                
+                // Render pagination controls
+                renderHistoryPagination(totalItems);
+            }
+
+            // Handle member registration
+            $('#memberForm').on('submit', function (e) {
+                e.preventDefault();
+                const name = $('#memberName').val().trim();
+                const target = parseInt($('#targetTabungan').val());
+
+                if (!name || target < 0) {
+                    showAlert('Mohon isi data dengan benar.', 'error');
+                    return;
+                }
+
+                // Check if member name already exists (case insensitive)
+                const exists = members.some(m => m.name.toLowerCase() === name.toLowerCase());
+                if (exists) {
+                    showAlert('Member dengan nama tersebut sudah terdaftar.', 'warning');
+                    return;
+                }
+
+                members.push({
+                    name,
+                    target,
+                    note: $('#memberNote').val().trim(),
+                    savings: [],
+                });
+
+                $(this)[0].reset();
+                $('#memberModal').addClass('hidden');
+                $('body').css('overflow', '');
+                // After adding a new member, go to the last page to show the new member
+                paginationConfig.currentPage = Math.ceil(members.length / paginationConfig.membersPerPage);
+                renderMembers();
+                renderHistory();
+                showAlert(`Member "${name}" berhasil didaftarkan.`, 'success');
+            });
+
+            // Handle adding savings
+            $('#savingsForm').on('submit', function (e) {
+                e.preventDefault();
+                const memberIndex = parseInt($('#selectMember').val());
+                const amount = parseInt($('#amount').val());
+
+                if (isNaN(memberIndex) || memberIndex < 0 || memberIndex >= members.length) {
+                    showAlert('Pilih member yang valid.', 'error');
+                    return;
+                }
+                if (isNaN(amount) || amount <= 0) {
+                    showAlert('Masukkan jumlah tabungan yang valid.', 'error');
+                    return;
+                }
+
+                const today = new Date().toISOString();
+
+                members[memberIndex].savings.push({
+                    date: today,
+                    amount,
+                });
+
+                $(this)[0].reset();
+                renderMembers();
+                renderHistory();
+                showAlert(`Tabungan sebesar ${formatRupiah(amount)} berhasil ditambahkan untuk member "${members[memberIndex].name}".`, 'success');
+            });
+
+            // Tab switching functionality
+            function switchTab(tab) {
+                // Deselect all tabs desktop
+                $('[role="tab"]', '#tabsList').attr('aria-selected', 'false')
+                    .removeClass('border-blue-600 text-blue-600')
+                    .addClass('border-transparent text-gray-500');
+
+                // Hide all panels
+                $('[role="tabpanel"]').addClass('hidden');
+
+                // Select clicked tab desktop
+                $(tab).attr('aria-selected', 'true')
+                    .addClass('border-blue-600 text-blue-600')
+                    .removeClass('border-transparent text-gray-500');
+
+                // Show associated panel
+                const panelId = $(tab).attr('aria-controls');
+                $(`#${panelId}`).removeClass('hidden').focus();
+                
+                // Initialize history pagination if switching to history tab
+                if (panelId === 'panel-history') {
+                    historyPaginationConfig.currentPage = 1;
+                    applyHistoryFilters();
+                }
+            }
+
+            // Tab switching logic mobile
+            function switchTabMobile(tab) {
+                // Deselect all tabs mobile
+                $('[role="tab"]', '#mobileTabsMenu').attr('aria-selected', 'false')
+                    .removeClass('bg-blue-100 font-semibold')
+                    .addClass('text-gray-700');
+
+                // Select clicked tab mobile
+                $(tab).attr('aria-selected', 'true')
+                    .addClass('bg-blue-100 font-semibold')
+                    .removeClass('text-gray-700');
+
+                // Switch desktop tabs accordingly
+                const panelId = $(tab).attr('aria-controls');
+                const desktopTab = $(`#tabsList [aria-controls="${panelId}"]`);
+                if (desktopTab.length) {
+                    switchTab(desktopTab);
+                }
+
+                // Close mobile menu
+                closeMobileTabsMenu();
+            }
+
+            // Open mobile tabs menu
+            function openMobileTabsMenu() {
+                $('#mobileTabsOverlay').removeClass('hidden');
+                $('#mobileTabsMenu').removeClass('hidden');
+                $('#mobileTabsMenu').focus();
+                $('body').css('overflow', 'hidden');
+            }
+
+            // Close mobile tabs menu
+            function closeMobileTabsMenu() {
+                $('#mobileTabsOverlay').addClass('hidden');
+                $('#mobileTabsMenu').addClass('hidden');
+                $('body').css('overflow', '');
+                $('#btnOpenTabs').focus();
+            }
+
+            // Event listeners for desktop tabs
+            $('#tabsList [role="tab"]').on('click', function () {
+                switchTab(this);
+            }).on('keydown', function (e) {
+                const tabs = $('#tabsList [role="tab"]');
+                let index = tabs.index(this);
+
+                if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    index = (index + 1) % tabs.length;
+                    tabs.eq(index).focus();
+                } else if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    index = (index - 1 + tabs.length) % tabs.length;
+                    tabs.eq(index).focus();
+                } else if (e.key === 'Home') {
+                    e.preventDefault();
+                    tabs.eq(0).focus();
+                } else if (e.key === 'End') {
+                    e.preventDefault();
+                    tabs.eq(tabs.length - 1).focus();
+                } else if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    switchTab(this);
+                }
+            });
+
+            // Event listeners for mobile tabs
+            $('#mobileTabsMenu [role="tab"]').on('click', function () {
+                switchTabMobile(this);
+            }).on('keydown', function (e) {
+                const tabs = $('#mobileTabsMenu [role="tab"]');
+                let index = tabs.index(this);
+
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    index = (index + 1) % tabs.length;
+                    tabs.eq(index).focus();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    index = (index - 1 + tabs.length) % tabs.length;
+                    tabs.eq(index).focus();
+                } else if (e.key === 'Home') {
+                    e.preventDefault();
+                    tabs.eq(0).focus();
+                } else if (e.key === 'End') {
+                    e.preventDefault();
+                    tabs.eq(tabs.length - 1).focus();
+                } else if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    switchTabMobile(this);
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    closeMobileTabsMenu();
+                }
+            });
+
+            // Open mobile menu button
+            $('#btnOpenTabs').on('click', function () {
+                openMobileTabsMenu();
+            });
+
+            // Close mobile menu on overlay click
+            $('#mobileTabsOverlay').on('click', function () {
+                closeMobileTabsMenu();
+            });
+
+            // Close mobile menu on Escape key globally
+            $(document).on('keydown', function (e) {
+                if (e.key === 'Escape' && !$('#mobileTabsMenu').hasClass('hidden')) {
+                    closeMobileTabsMenu();
+                }
+            });
+
+            // Initialize first tab as selected desktop and mobile
+            $('#tabsList [role="tab"]').eq(0)
+                .attr('aria-selected', 'true')
+                .addClass('border-blue-600 text-blue-600')
+                .removeClass('border-transparent text-gray-500');
+
+            $('#mobileTabsMenu [role="tab"]').eq(0)
+                .attr('aria-selected', 'true')
+                .addClass('bg-blue-100 font-semibold')
+                .removeClass('text-gray-700');
+
+            // Initial render
+            renderMembers();
+            renderHistory();
+
+            // ===== Edit Member Functionality =====
+            
+            // Toggle dropdown menu for members
+            $(document).on('click', '.btn-menu-member', function(e) {
+                e.stopPropagation(); // Prevent event bubbling
+                const dropdown = $(this).siblings('.member-dropdown-menu');
+                
+                // Close all other dropdowns first
+                $('.member-dropdown-menu').not(dropdown).addClass('hidden');
+                
+                // Toggle current dropdown
+                dropdown.toggleClass('hidden');
+                
+                // Update aria-expanded state
+                $(this).attr('aria-expanded', !dropdown.hasClass('hidden'));
+            });
+            
+            // Close all dropdowns when clicking outside
+            $(document).on('click', function() {
+                $('.member-dropdown-menu').addClass('hidden');
+                $('.btn-menu-member').attr('aria-expanded', 'false');
+            });
+            
+            // Open edit member modal
+            $(document).on('click', '.btn-edit-member', function() {
+                const index = $(this).data('index');
+                const member = members[index];
+                
+                $('#editMemberIndex').val(index);
+                $('#editMemberName').val(member.name);
+                $('#editTargetTabungan').val(member.target);
+                $('#editMemberNote').val(member.note || '');
+                
+                $('#editMemberModal').removeClass('hidden');
+                $('#editMemberName').focus();
+                $('body').css('overflow', 'hidden');
+            });
+            
+            // Close edit member modal
+            $('#closeEditModal').on('click', function() {
+                $('#editMemberModal').addClass('hidden');
+                $('body').css('overflow', '');
+            });
+            
+            // Close edit modal when clicking outside
+            $('#editMemberModal').on('click', function(e) {
+                if (e.target === this) {
+                    $('#editMemberModal').addClass('hidden');
+                    $('body').css('overflow', '');
+                }
+            });
+            
+            // Close edit modal on Escape key
+            $(document).on('keydown', function(e) {
+                if (e.key === 'Escape' && !$('#editMemberModal').hasClass('hidden')) {
+                    $('#editMemberModal').addClass('hidden');
+                    $('body').css('overflow', '');
+                }
+            });
+            
+            // Save edit member form
+            $('#editMemberForm').on('submit', function(e) {
+                e.preventDefault();
+                const index = parseInt($('#editMemberIndex').val());
+                const name = $('#editMemberName').val().trim();
+                const target = parseInt($('#editTargetTabungan').val());
+                
+                if (!name || target < 0) {
+                    showAlert('Mohon isi data dengan benar.', 'error');
+                    return;
+                }
+                
+                // Check if new name already exists (excluding the current member)
+                const nameExists = members.some((m, i) => i !== index && m.name.toLowerCase() === name.toLowerCase());
+                if (nameExists) {
+                    showAlert('Member dengan nama tersebut sudah terdaftar.', 'warning');
+                    return;
+                }
+                
+                // Update the member data
+                members[index].name = name;
+                members[index].target = target;
+                members[index].note = $('#editMemberNote').val().trim();
+                
+                $('#editMemberModal').addClass('hidden');
+                $('body').css('overflow', '');
+                renderMembers();
+                renderHistory();
+                showAlert(`Data member "${name}" berhasil diperbarui.`, 'success');
+            });
+            
+            // ===== Delete Member Functionality =====
+            
+            // Open delete confirmation modal
+            $(document).on('click', '.btn-delete-member', function() {
+                const index = $(this).data('index');
+                const member = members[index];
+                
+                $('#deleteMemberIndex').val(index);
+                $('#deleteMemberName').text(member.name);
+                
+                $('#deleteMemberModal').removeClass('hidden');
+                $('body').css('overflow', 'hidden');
+            });
+            
+            // Cancel delete
+            $('#cancelDelete').on('click', function() {
+                $('#deleteMemberModal').addClass('hidden');
+                $('body').css('overflow', '');
+            });
+            
+            // Confirm delete
+            $('#confirmDelete').on('click', function() {
+                const index = parseInt($('#deleteMemberIndex').val());
+                const memberName = members[index].name;
+                
+                members.splice(index, 1);
+                
+                $('#deleteMemberModal').addClass('hidden');
+                $('body').css('overflow', '');
+                renderMembers();
+                renderHistory();
+                showAlert(`Member "${memberName}" berhasil dihapus.`, 'success');
+            });
+            
+            // Close delete modal when clicking outside
+            $('#deleteMemberModal').on('click', function(e) {
+                if (e.target === this) {
+                    $('#deleteMemberModal').addClass('hidden');
+                    $('body').css('overflow', '');
+                }
+            });
+            
+            // Close delete modal on Escape key
+            $(document).on('keydown', function(e) {
+                if (e.key === 'Escape' && !$('#deleteMemberModal').hasClass('hidden')) {
+                    $('#deleteMemberModal').addClass('hidden');
+                    $('body').css('overflow', '');
+                }
+            });
+
+            // Modal functionality
+            $('#btnAddMember').on('click', function () {
+                $('#memberModal').removeClass('hidden');
+                $('#memberName').focus();
+                $('body').css('overflow', 'hidden');
+            });
+
+            $('#closeModal').on('click', function () {
+                $('#memberModal').addClass('hidden');
+                $('body').css('overflow', '');
+            });
+
+            // Modal for adding savings functionality
+            $('#btnAddSavings').on('click', function () {
+                $('#savingsModal').removeClass('hidden');
+                $('#selectMember').focus();
+                $('body').css('overflow', 'hidden');
+            });
+
+            $('#closeSavingsModal').on('click', function () {
+                $('#savingsModal').addClass('hidden');
+                $('body').css('overflow', '');
+            });
+
+            // Close modal when clicking outside of it
+            $('#savingsModal').on('click', function (e) {
+                if (e.target === this) {
+                    $('#savingsModal').addClass('hidden');
+                    $('body').css('overflow', '');
+                }
+            });
+
+            // Close modal on Escape key for savings modal
+            $(document).on('keydown', function (e) {
+                if (e.key === 'Escape' && !$('#savingsModal').hasClass('hidden')) {
+                    $('#savingsModal').addClass('hidden');
+                    $('body').css('overflow', '');
+                }
+            });
+
+            // Close modal when clicking outside of it
+            $('#memberModal').on('click', function (e) {
+                if (e.target === this) {
+                    $('#memberModal').addClass('hidden');
+                    $('body').css('overflow', '');
+                }
+            });
+
+            // Close modal on Escape key
+            $(document).on('keydown', function (e) {
+                if (e.key === 'Escape' && !$('#memberModal').hasClass('hidden')) {
+                    $('#memberModal').addClass('hidden');
+                    $('body').css('overflow', '');
+                }
+            });
+
+            // After form submission, close the modal
+            $('#memberForm').on('submit', function (e) {
+                e.preventDefault();
+                const name = $('#memberName').val().trim();
+                const target = parseInt($('#targetTabungan').val());
+
+                if (!name || target < 0) {
+                    showAlert('Mohon isi data dengan benar.', 'error');
+                    return;
+                }
+
+                // Check if member name already exists (case insensitive)
+                const exists = members.some(m => m.name.toLowerCase() === name.toLowerCase());
+                if (exists) {
+                    showAlert('Member dengan nama tersebut sudah terdaftar.', 'warning');
+                    return;
+                }
+
+                members.push({
+                    name,
+                    target,
+                    note: $('#memberNote').val().trim(),
+                    savings: [],
+                });
+
+                $(this)[0].reset();
+                $('#memberModal').addClass('hidden');
+                $('body').css('overflow', '');
+                renderMembers();
+                renderHistory();
+                showAlert(`Member "${name}" berhasil didaftarkan.`, 'success');
+            });
+
+            // ===== Edit History Functionality =====
+            
+            // Open edit history modal
+            $(document).on('click', '.btn-edit-history', function() {
+                const memberName = $(this).data('member');
+                const date = $(this).data('date');
+                const amount = $(this).data('amount');
+                
+                $('#editHistoryMember').val(memberName);
+                $('#editHistoryDate').val(date);
+                $('#editHistoryAmount').val(amount);
+                
+                $('#editHistoryModal').removeClass('hidden');
+                $('#editHistoryAmount').focus();
+                $('body').css('overflow', 'hidden');
+            });
+            
+            // Close edit history modal
+            $('#closeEditHistoryModal').on('click', function() {
+                $('#editHistoryModal').addClass('hidden');
+                $('body').css('overflow', '');
+            });
+            
+            // Close edit history modal when clicking outside
+            $('#editHistoryModal').on('click', function(e) {
+                if (e.target === this) {
+                    $('#editHistoryModal').addClass('hidden');
+                    $('body').css('overflow', '');
+                }
+            });
+            
+            // Close edit history modal on Escape key
+            $(document).on('keydown', function(e) {
+                if (e.key === 'Escape' && !$('#editHistoryModal').hasClass('hidden')) {
+                    $('#editHistoryModal').addClass('hidden');
+                    $('body').css('overflow', '');
+                }
+            });
+            
+            // Save edit history form
+            $('#editHistoryForm').on('submit', function(e) {
+                e.preventDefault();
+                const memberName = $('#editHistoryMember').val();
+                const date = $('#editHistoryDate').val();
+                const newAmount = parseInt($('#editHistoryAmount').val());
+                
+                if (newAmount <= 0) {
+                    showAlert('Jumlah tabungan harus lebih dari 0.', 'error');
+                    return;
+                }
+                
+                // Find member and update the saving entry
+                let updated = false;
+                $.each(members, function(i, member) {
+                    if (member.name === memberName) {
+                        $.each(member.savings, function(j, saving) {
+                            if (saving.date === date) {
+                                saving.amount = newAmount;
+                                updated = true;
+                                return false; // break the inner loop
+                            }
+                        });
+                        return false; // break the outer loop
+                    }
+                });
+                
+                if (updated) {
+                    $('#editHistoryModal').addClass('hidden');
+                    $('body').css('overflow', '');
+                    renderMembers();
+                    renderHistory();
+                    showAlert(`Data tabungan ${memberName} berhasil diperbarui.`, 'success');
+                } else {
+                    showAlert('Data tabungan tidak ditemukan.', 'error');
+                }
+            });
+            
+            // ===== Delete History Functionality =====
+            
+            // Open delete history confirmation modal
+            $(document).on('click', '.btn-delete-history', function() {
+                const memberName = $(this).data('member');
+                const date = $(this).data('date');
+                
+                $('#deleteHistoryMemberName').val(memberName);
+                $('#deleteHistoryDate').val(date);
+                $('#deleteHistoryMember').text(memberName);
+                
+                $('#deleteHistoryModal').removeClass('hidden');
+                $('body').css('overflow', 'hidden');
+            });
+            
+            // Cancel delete history
+            $('#cancelDeleteHistory').on('click', function() {
+                $('#deleteHistoryModal').addClass('hidden');
+                $('body').css('overflow', '');
+            });
+            
+            // Confirm delete history
+            $('#confirmDeleteHistory').on('click', function() {
+                const memberName = $('#deleteHistoryMemberName').val();
+                const date = $('#deleteHistoryDate').val();
+                
+                // Find member and delete the saving entry
+                let deleted = false;
+                $.each(members, function(i, member) {
+                    if (member.name === memberName) {
+                        $.each(member.savings, function(j, saving) {
+                            if (saving.date === date) {
+                                member.savings.splice(j, 1);
+                                deleted = true;
+                                return false; // break the inner loop
+                            }
+                        });
+                        return false; // break the outer loop
+                    }
+                });
+                
+                if (deleted) {
+                    $('#deleteHistoryModal').addClass('hidden');
+                    $('body').css('overflow', '');
+                    renderMembers();
+                    renderHistory();
+                    showAlert(`Data tabungan ${memberName} berhasil dihapus.`, 'success');
+                } else {
+                    showAlert('Data tabungan tidak ditemukan.', 'error');
+                }
+            });
+            
+            // Close delete history modal when clicking outside
+            $('#deleteHistoryModal').on('click', function(e) {
+                if (e.target === this) {
+                    $('#deleteHistoryModal').addClass('hidden');
+                    $('body').css('overflow', '');
+                }
+            });
+            
+            // Close delete history modal on Escape key
+            $(document).on('keydown', function(e) {
+                if (e.key === 'Escape' && !$('#deleteHistoryModal').hasClass('hidden')) {
+                    $('#deleteHistoryModal').addClass('hidden');
+                    $('body').css('overflow', '');
+                }
+            });
+
+            // Get paginated history items
+            function getPaginatedHistory(allSavings) {
+                const startIndex = (historyPaginationConfig.currentPage - 1) * historyPaginationConfig.itemsPerPage;
+                const endIndex = startIndex + historyPaginationConfig.itemsPerPage;
+                return allSavings.slice(startIndex, endIndex);
+            }
+
+            // Render history pagination controls
+            function renderHistoryPagination(totalItems) {
+                const totalPages = Math.ceil(totalItems / historyPaginationConfig.itemsPerPage);
+                historyPaginationConfig.totalPages = totalPages;
+                
+                if (totalPages <= 1) {
+                    $('#historyPaginationControls').addClass('hidden');
+                    return;
+                }
+
+                $('#historyPaginationControls').removeClass('hidden');
+                
+                let paginationHTML = '';
+                
+                // Previous button
+                paginationHTML += `
+                    <button id="prevHistoryPage" class="px-3 py-1 rounded-md flex items-center ${historyPaginationConfig.currentPage === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-100'}"
+                    ${historyPaginationConfig.currentPage === 1 ? 'disabled' : ''}>
+                        <i class="fas fa-chevron-left mr-1"></i> Prev
+                    </button>
+                `;
+                
+                let pages = [];
+                const currentPage = historyPaginationConfig.currentPage;
+                
+                // Always show first page
+                pages.push(1);
+                
+                // Show ellipsis after first page if needed
+                if (currentPage > 3) {
+                    pages.push('...');
+                }
+                
+                // Show pages around current page
+                for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+                    pages.push(i);
+                }
+                
+                // Show ellipsis before last page if needed
+                if (currentPage < totalPages - 2) {
+                    pages.push('...');
+                }
+                
+                // Always show last page if there is more than one page
+                if (totalPages > 1) {
+                    pages.push(totalPages);
+                }
+                
+                // Render page numbers
+                pages.forEach(page => {
+                    if (page === '...') {
+                        paginationHTML += `
+                            <span class="px-3 py-1 text-gray-500">...</span>
+                        `;
+                    } else {
+                        paginationHTML += `
+                            <button class="history-page-number px-3 py-1 rounded-md ${page === currentPage ? 
+                                'bg-blue-600 text-white' : 
+                                'text-gray-700 hover:bg-blue-100'}" 
+                                data-page="${page}">
+                                ${page}
+                            </button>
+                        `;
+                    }
+                });
+                
+                // Next button
+                paginationHTML += `
+                    <button id="nextHistoryPage" class="px-3 py-1 rounded-md flex items-center ${historyPaginationConfig.currentPage === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-100'}"
+                    ${historyPaginationConfig.currentPage === totalPages ? 'disabled' : ''}>
+                        Next <i class="fas fa-chevron-right ml-1"></i>
+                    </button>
+                `;
+                
+                $('#historyPaginationControls').html(paginationHTML);
+                
+                // Add event listeners for pagination
+                $('.history-page-number').on('click', function() {
+                    historyPaginationConfig.currentPage = parseInt($(this).data('page'));
+                    applyHistoryFilters(); // Re-apply filters with new page
+                });
+                
+                $('#prevHistoryPage').on('click', function() {
+                    if (historyPaginationConfig.currentPage > 1) {
+                        historyPaginationConfig.currentPage--;
+                        applyHistoryFilters();
+                    }
+                });
+                
+                $('#nextHistoryPage').on('click', function() {
+                    if (historyPaginationConfig.currentPage < totalPages) {
+                        historyPaginationConfig.currentPage++;
+                        applyHistoryFilters();
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>
