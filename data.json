@@ -1,0 +1,389 @@
+[
+  {
+    "name": "John Doe",
+    "note": "Pelanggan setia sejak 2023.",
+    "savings": [
+      {
+        "date": "2024-01-01",
+        "amount": 1000000,
+        "type": "tabungan"
+      },
+      {
+        "date": "2024-02-01",
+        "amount": 2000000,
+        "type": "tabungan"
+      }
+    ]
+  },
+  {
+    "name": "Jane Smith",
+    "note": "Suka menabung setiap bulan.",
+    "savings": [
+      {
+        "date": "2024-01-15",
+        "amount": 500000,
+        "type": "tabungan"
+      },
+      {
+        "date": "2024-02-15",
+        "amount": 1000000,
+        "type": "jimpitan"
+      }
+    ]
+  },
+  {
+    "name": "Ahmad Fauzi",
+    "note": "Menabung untuk pendidikan anak.",
+    "savings": [
+      {
+        "date": "2024-02-03",
+        "amount": 750000,
+        "type": "tabungan"
+      },
+      {
+        "date": "2024-03-05",
+        "amount": 1200000,
+        "type": "jimpitan"
+      },
+      {
+        "date": "2024-04-08",
+        "amount": 900000,
+        "type": "tabungan"
+      }
+    ]
+  },
+  {
+    "name": "Siti Rahayu",
+    "note": "Pelanggan baru dengan target besar.",
+    "savings": [
+      {
+        "date": "2024-01-22",
+        "amount": 1500000,
+        "type": "tabungan"
+      },
+      {
+        "date": "2024-03-15",
+        "amount": 2000000,
+        "type": "jimpitan"
+      }
+    ]
+  },
+  {
+    "name": "Budi Santoso",
+    "note": "Menabung untuk renovasi rumah.",
+    "savings": [
+      {
+        "date": "2024-01-10",
+        "amount": 3000000,
+        "type": "tabungan"
+      },
+      {
+        "date": "2024-02-20",
+        "amount": 2500000,
+        "type": "jimpitan"
+      },
+      {
+        "date": "2024-03-30",
+        "amount": 4000000,
+        "type": "tabungan"
+      }
+    ]
+  },
+  {
+    "name": "Dewi Lestari",
+    "note": "Menabung untuk liburan keluarga.",
+    "savings": [
+      {
+        "date": "2024-02-05",
+        "amount": 800000,
+        "type": "tabungan"
+      },
+      {
+        "date": "2024-03-07",
+        "amount": 1200000,
+        "type": "tabungan"
+      }
+    ]
+  },
+  {
+    "name": "Rizki Pratama",
+    "note": "Pelanggan dengan tabungan rutin.",
+    "savings": [
+      {
+        "date": "2024-01-18",
+        "amount": 2000000,
+        "type": "tabungan"
+      },
+      {
+        "date": "2024-03-20",
+        "amount": 1750000,
+        "type": "tabungan"
+      }
+    ]
+  },
+  {
+    "name": "Anisa Putri",
+    "note": "Menabung untuk membeli kendaraan.",
+    "savings": [
+      {
+        "date": "2024-02-12",
+        "amount": 1250000,
+        "type": "tabungan"
+      },
+      {
+        "date": "2024-04-01",
+        "amount": 1800000,
+        "type": "tabungan"
+      },
+      {
+        "date": "2024-04-15",
+        "amount": 900000,
+        "type": "tabungan"
+      }
+    ]
+  },
+  {
+    "name": "Dimas Wahyu",
+    "note": "Pelanggan dengan target besar.",
+    "savings": [
+      {
+        "date": "2024-01-05",
+        "amount": 2500000,
+        "type": "tabungan"
+      },
+      {
+        "date": "2024-02-28",
+        "amount": 3500000,
+        "type": "tabungan"
+      }
+    ]
+  },
+  {
+    "name": "Rani Maharani",
+    "note": "Menabung untuk pendidikan anak.",
+    "savings": [
+      {
+        "date": "2024-03-10",
+        "amount": 1700000,
+        "type": "tabungan"
+      },
+      {
+        "date": "2024-04-10",
+        "amount": 2300000,
+        "type": "tabungan"
+      }
+    ]
+  },
+  {
+    "name": "Hendra Gunawan",
+    "note": "Pelanggan dengan tabungan besar.",
+    "savings": [
+      {
+        "date": "2024-01-25",
+        "amount": 4000000,
+        "type": "tabungan"
+      },
+      {
+        "date": "2024-03-25",
+        "amount": 5000000,
+        "type": "tabungan"
+      },
+      {
+        "date": "2024-04-12",
+        "amount": 3500000,
+        "type": "tabungan"
+      }
+    ]
+  },
+  {
+    "name": "Lia Kusuma",
+    "note": "Menabung untuk membeli peralatan rumah.",
+    "savings": [
+      {
+        "date": "2024-02-08",
+        "amount": 750000,
+        "type": "tabungan"
+      },
+      {
+        "date": "2024-03-12",
+        "amount": 1000000,
+        "type": "tabungan"
+      }
+    ]
+  },
+  {
+    "name": "Arif Rahman",
+    "note": "Pelanggan baru dengan target menengah.",
+    "savings": [
+      {
+        "date": "2024-01-30",
+        "amount": 1500000,
+        "type": "tabungan"
+      },
+      {
+        "date": "2024-03-02",
+        "amount": 1200000,
+        "type": "tabungan"
+      },
+      {
+        "date": "2024-04-05",
+        "amount": 1800000,
+        "type": "tabungan"
+      }
+    ]
+  },
+  {
+    "name": "Nadia Sari",
+    "note": "Menabung untuk membeli gadget baru.",
+    "savings": [
+      {
+        "date": "2024-02-15",
+        "amount": 1100000,
+        "type": "tabungan"
+      },
+      {
+        "date": "2024-04-02",
+        "amount": 1350000,
+        "type": "tabungan"
+      }
+    ]
+  },
+  {
+    "name": "Eko Prasetyo",
+    "note": "Pelanggan setia sejak 2022.",
+    "savings": [
+      {
+        "date": "2024-01-12",
+        "amount": 2000000,
+        "type": "tabungan"
+      },
+      {
+        "date": "2024-03-08",
+        "amount": 2500000,
+        "type": "tabungan"
+      }
+    ]
+  },
+  {
+    "name": "Maya Indah",
+    "note": "Menabung untuk liburan ke luar negeri.",
+    "savings": [
+      {
+        "date": "2024-02-22",
+        "amount": 1300000,
+        "type": "tabungan"
+      },
+      {
+        "date": "2024-04-03",
+        "amount": 1750000,
+        "type": "tabungan"
+      }
+    ]
+  },
+  {
+    "name": "Surya Adi",
+    "note": "Pelanggan dengan tabungan rutin.",
+    "savings": [
+      {
+        "date": "2024-01-20",
+        "amount": 2200000,
+        "type": "tabungan"
+      },
+      {
+        "date": "2024-03-18",
+        "amount": 2800000,
+        "type": "tabungan"
+      },
+      {
+        "date": "2024-04-18",
+        "amount": 1500000,
+        "type": "tabungan"
+      }
+    ]
+  },
+  {
+    "name": "Putri Wulandari",
+    "note": "Menabung untuk membeli perhiasan.",
+    "savings": [
+      {
+        "date": "2024-02-10",
+        "amount": 800000,
+        "type": "tabungan"
+      },
+      {
+        "date": "2024-03-22",
+        "amount": 950000,
+        "type": "tabungan"
+      }
+    ]
+  },
+  {
+    "name": "Agus Purnomo",
+    "note": "Pelanggan dengan target besar.",
+    "savings": [
+      {
+        "date": "2024-01-08",
+        "amount": 2500000,
+        "type": "tabungan"
+      },
+      {
+        "date": "2024-02-25",
+        "amount": 3000000,
+        "type": "tabungan"
+      }
+    ]
+  },
+  {
+    "name": "Ratna Sari",
+    "note": "Menabung untuk pendidikan anak.",
+    "savings": [
+      {
+        "date": "2024-03-01",
+        "amount": 1800000,
+        "type": "tabungan"
+      },
+      {
+        "date": "2024-04-07",
+        "amount": 2100000,
+        "type": "tabungan"
+      },
+      {
+        "date": "2024-04-20",
+        "amount": 1250000,
+        "type": "tabungan"
+      }
+    ]
+  },
+  {
+    "name": "Irfan Maulana",
+    "note": "Pelanggan setia sejak 2021.",
+    "savings": [
+      {
+        "date": "2024-01-15",
+        "amount": 2800000,
+        "type": "tabungan"
+      },
+      {
+        "date": "2024-03-17",
+        "amount": 3200000,
+        "type": "tabungan"
+      }
+    ]
+  },
+  {
+    "name": "Dina Fitriani",
+    "note": "Menabung untuk membeli kendaraan.",
+    "savings": [
+      {
+        "date": "2024-02-18",
+        "amount": 1500000,
+        "type": "tabungan"
+      },
+      {
+        "date": "2024-04-12",
+        "amount": 1900000,
+        "type": "tabungan"
+      }
+    ]
+  }
+]
