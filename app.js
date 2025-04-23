@@ -818,16 +818,24 @@ $(document).ready(function () {
     $(document).on('click', '.btn-edit-saving', function () {
         const memberIndex = $(this).data('member-index');
         const savingIndex = $(this).data('saving-index');
-        const amount = $(this).data('amount');
-        const type = $(this).data('type');
-
+        
+        const member = members[memberIndex];
+        const saving = member.savings[savingIndex];
+        
+        // Set form values
         $('#editSavingsMemberIndex').val(memberIndex);
         $('#editSavingsIndex').val(savingIndex);
-        $('#editSavingsAmount').val(amount);
-        $('#editSavingsType').val(type);
+        $('#editSavingsDate').val(saving.date);
+        
+        // Set tabungan and jimpitan amounts
+        $('#editSavingsAmountTabungan').val(saving.bills.tabungan || 0);
+        $('#editSavingsAmountJimpitan').val(saving.bills.jimpitan || 0);
+        
+        // Display date in a readable format
+        $('#editSavingsDateDisplay').text(formatDate(saving.date));
 
         $('#editSavingsModal').removeClass('hidden');
-        $('#editSavingsAmount').focus();
+        $('#editSavingsAmountTabungan').focus();
         $('body').css('overflow', 'hidden');
     });
 
@@ -858,11 +866,12 @@ $(document).ready(function () {
         e.preventDefault();
         const memberIndex = parseInt($('#editSavingsMemberIndex').val());
         const savingIndex = parseInt($('#editSavingsIndex').val());
-        const amount = parseInt($('#editSavingsAmount').val());
-        const type = $('#editSavingsType').val();
+        const amountTabungan = parseInt($('#editSavingsAmountTabungan').val()) || 0;
+        const amountJimpitan = parseInt($('#editSavingsAmountJimpitan').val()) || 0;
+        const date = $('#editSavingsDate').val(); // Keep the original date
 
-        if (isNaN(amount) || amount <= 0) {
-            showAlert('Mohon isi jumlah tabungan dengan benar.', 'error');
+        if ((amountTabungan <= 0 && amountJimpitan <= 0) || (isNaN(amountTabungan) && isNaN(amountJimpitan))) {
+            showAlert('Masukkan jumlah tabungan atau jimpitan yang valid.', 'error');
             return;
         }
 
@@ -871,9 +880,11 @@ $(document).ready(function () {
         // Create a new array of savings with the updated item
         const updatedSavings = [...member.savings];
         updatedSavings[savingIndex] = {
-            ...updatedSavings[savingIndex],
-            amount: amount,
-            type: type
+            date: date, // Keep original date
+            bills: {
+                tabungan: amountTabungan,
+                jimpitan: amountJimpitan
+            }
         };
 
         // Update Firestore

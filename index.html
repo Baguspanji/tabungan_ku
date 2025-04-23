@@ -365,21 +365,22 @@
                     <form id="editSavingsForm" class="space-y-4">
                         <input type="hidden" id="editSavingsMemberIndex">
                         <input type="hidden" id="editSavingsIndex">
+                        <input type="hidden" id="editSavingsDate">
                         
-                        <div>
-                            <label for="editSavingsAmount" class="block text-gray-700 font-medium mb-1">Jumlah (Rp)</label>
-                            <input type="number" id="editSavingsAmount" name="editSavingsAmount" min="1000" step="1000" required
-                                class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label for="editSavingsAmountTabungan" class="block text-gray-700 font-medium mb-1">Tabungan (Rp)</label>
+                                <input type="number" id="editSavingsAmountTabungan" name="editSavingsAmountTabungan" min="0" step="1000" 
+                                    class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="editSavingsAmountJimpitan" class="block text-gray-700 font-medium mb-1">Jimpitan (Rp)</label>
+                                <input type="number" id="editSavingsAmountJimpitan" name="editSavingsAmountJimpitan" min="0" step="1000" 
+                                    class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
                         </div>
                         
-                        <div>
-                            <label for="editSavingsType" class="block text-gray-700 font-medium mb-1">Jenis</label>
-                            <select id="editSavingsType" name="editSavingsType" required
-                                class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="tabungan">Tabungan</option>
-                                <option value="jimpitan">Jimpitan</option>
-                            </select>
-                        </div>
+                        <p class="text-sm text-gray-500 italic">Tanggal: <span id="editSavingsDateDisplay"></span></p>
                         
                         <button type="submit"
                             class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-md transition">
