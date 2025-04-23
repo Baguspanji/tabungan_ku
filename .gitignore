@@ -1,0 +1,6 @@
+admin.html
+data.json
+# firebase-config.js
+node_modules/
+# package-lock.json
+.deploy.sh
