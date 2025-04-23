@@ -4,7 +4,7 @@ $(document).ready(function () {
 
     // Loading state indicator
     let isLoading = true;
-    
+
     // Show loading indicator function
     function showLoading() {
         $('#membersList').html(`
@@ -16,15 +16,15 @@ $(document).ready(function () {
             </div>
         `);
     }
-    
+
     // Show initial loading
     showLoading();
-    
+
     // Fetch data from Firestore
     function fetchMembers() {
         isLoading = true;
         showLoading();
-        
+
         // Get members collection from Firestore
         db.collection('members').get().then((querySnapshot) => {
             members = [];
@@ -37,7 +37,7 @@ $(document).ready(function () {
                     savings: memberData.savings || []
                 });
             });
-            
+
             isLoading = false;
             renderMembers();
         }).catch((error) => {
@@ -47,7 +47,7 @@ $(document).ready(function () {
             renderMembers();
         });
     }
-    
+
     // Initial data fetch
     fetchMembers();
 
@@ -249,12 +249,10 @@ $(document).ready(function () {
 
         $.each(paginatedMembers, function (index, member) {
             const totalTabungan = member.savings
-                .filter(saving => saving.type === 'tabungan')
-                .reduce((acc, cur) => acc + cur.amount, 0);
+                .reduce((acc, cur) => acc + (cur.bills.tabungan || 0), 0);
 
             const totalJimpitan = member.savings
-                .filter(saving => saving.type === 'jimpitan')
-                .reduce((acc, cur) => acc + cur.amount, 0);
+                .reduce((acc, cur) => acc + (cur.bills.jimpitan || 0), 0);
 
             const totalSaved = totalTabungan + totalJimpitan;
 
@@ -353,73 +351,6 @@ $(document).ready(function () {
             });
     });
 
-    // Handle adding savings
-    $('#savingsForm').on('submit', function (e) {
-        e.preventDefault();
-        const memberIndex = parseInt($('#selectMember').val());
-        const amount = parseInt($('#amount').val());
-
-        if (isNaN(memberIndex) || memberIndex < 0 || memberIndex >= members.length) {
-            showAlert('Pilih member yang valid.', 'error');
-            return;
-        }
-        if (isNaN(amount) || amount <= 0) {
-            showAlert('Masukkan jumlah tabungan yang valid.', 'error');
-            return;
-        }
-
-        const today = new Date().toISOString();
-        const member = members[memberIndex];
-        
-        // Show loading state
-        showLoading();
-        
-        const newSaving = {
-            date: today,
-            amount,
-            type: 'tabungan' // Default to tabungan
-        };
-        
-        // Create a copy of the member's savings and add the new one
-        const updatedSavings = [...member.savings, newSaving];
-        
-        // Update Firestore
-        db.collection('members').doc(member.id).update({
-            savings: updatedSavings
-        })
-        .then(() => {
-            // Update local data
-            members[memberIndex].savings = updatedSavings;
-            
-            $(this)[0].reset();
-            renderMembers();
-            showAlert(`Tabungan sebesar ${formatRupiah(amount)} berhasil ditambahkan untuk member "${members[memberIndex].name}".`, 'success');
-        })
-        .catch((error) => {
-            console.error("Error adding saving: ", error);
-            showAlert(`Gagal menambahkan tabungan: ${error.message}`, 'error');
-            renderMembers();
-        });
-    });
-
-    // Close mobile menu on Escape key globally
-    $(document).on('keydown', function (e) {
-        if (e.key === 'Escape' && !$('#mobileTabsMenu').hasClass('hidden')) {
-            closeMobileTabsMenu();
-        }
-    });
-
-    // Initialize first tab as selected desktop and mobile
-    $('#tabsList [role="tab"]').eq(0)
-        .attr('aria-selected', 'true')
-        .addClass('border-blue-600 text-blue-600')
-        .removeClass('border-transparent text-gray-500');
-
-    $('#mobileTabsMenu [role="tab"]').eq(0)
-        .attr('aria-selected', 'true')
-        .addClass('bg-blue-100 font-semibold')
-        .removeClass('text-gray-700');
-
     // Initial render
     renderMembers();
 
@@ -501,30 +432,30 @@ $(document).ready(function () {
         }
 
         const member = members[index];
-        
+
         // Show loading state
         showLoading();
-        
+
         // Update data in Firestore
         db.collection('members').doc(member.id).update({
             name: name,
             note: $('#editMemberNote').val().trim()
         })
-        .then(() => {
-            // Update the member data locally
-            members[index].name = name;
-            members[index].note = $('#editMemberNote').val().trim();
+            .then(() => {
+                // Update the member data locally
+                members[index].name = name;
+                members[index].note = $('#editMemberNote').val().trim();
 
-            $('#editMemberModal').addClass('hidden');
-            $('body').css('overflow', '');
-            renderMembers();
-            showAlert(`Data member "${name}" berhasil diperbarui.`, 'success');
-        })
-        .catch((error) => {
-            console.error("Error updating member: ", error);
-            showAlert(`Gagal memperbarui member: ${error.message}`, 'error');
-            renderMembers();
-        });
+                $('#editMemberModal').addClass('hidden');
+                $('body').css('overflow', '');
+                renderMembers();
+                showAlert(`Data member "${name}" berhasil diperbarui.`, 'success');
+            })
+            .catch((error) => {
+                console.error("Error updating member: ", error);
+                showAlert(`Gagal memperbarui member: ${error.message}`, 'error');
+                renderMembers();
+            });
     });
 
     // ===== Delete Member Functionality =====
@@ -552,10 +483,10 @@ $(document).ready(function () {
         const index = parseInt($('#deleteMemberIndex').val());
         const member = members[index];
         const memberName = member.name;
-        
+
         // Show loading state
         showLoading();
-        
+
         // Delete from Firestore
         db.collection('members').doc(member.id).delete()
             .then(() => {
@@ -602,52 +533,9 @@ $(document).ready(function () {
         $('#detailSavingsMemberIndex').val(index);
 
         // Clear previous content and form values
-        $('#savingsDetailTable').empty();
         $('#addSavingsDetailForm')[0].reset();
 
-        // Sort savings by date (newest first)
-        const sortedSavings = [...member.savings].sort((a, b) =>
-            new Date(b.date) - new Date(a.date)
-        );
-
-        // Calculate total savings
-        const totalSavings = member.savings.reduce((acc, cur) => acc + cur.amount, 0);
-
-        // Display each saving entry
-        $.each(sortedSavings, function (i, saving) {
-            const formattedDate = formatDate(saving.date);
-            const formattedAmount = formatRupiah(saving.amount);
-            const savingType = saving.type ? saving.type.charAt(0).toUpperCase() + saving.type.slice(1) : 'Tabungan'; // Capitalize first letter
-            
-            // Find the original index in member's savings array
-            const originalIndex = member.savings.findIndex(s => 
-                s.date === saving.date && s.amount === saving.amount && s.type === saving.type
-            );
-
-            const row = $(`
-                <tr class="${i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}">
-                    <td class="px-4 py-2 whitespace-nowrap">${formattedDate}</td>
-                    <td class="px-4 py-2">${savingType}</td>
-                    <td class="px-4 py-2 text-right font-medium">${formattedAmount}</td>
-                    <td class="px-4 py-2 text-right">
-                        <button class="btn-edit-saving text-blue-600 hover:text-blue-800 mx-1" 
-                            data-member-index="${index}" data-saving-index="${originalIndex}" 
-                            data-amount="${saving.amount}" data-type="${saving.type || 'tabungan'}">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn-delete-saving text-red-600 hover:text-red-800 mx-1" 
-                            data-member-index="${index}" data-saving-index="${originalIndex}">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
-                    </td>
-                </tr>
-            `);
-
-            $('#savingsDetailTable').append(row);
-        });
-
-        // Show total amount
-        $('#totalSavingsAmount').text(formatRupiah(totalSavings));
+        refreshSavingsDetail(index);
 
         // Show modal
         $('#detailSavingsModal').removeClass('hidden');
@@ -658,53 +546,57 @@ $(document).ready(function () {
     $('#addSavingsDetailForm').on('submit', function (e) {
         e.preventDefault();
         const memberIndex = parseInt($('#detailSavingsMemberIndex').val());
-        const amount = parseInt($('#detailAmount').val());
-        const savingType = $('#detailSavingType').val();
+        const amountTabungan = parseInt($('#detailAmountTabungan').val()) || 0;
+        const amountJimpitan = parseInt($('#detailAmountJimpitan').val()) || 0;
 
         if (isNaN(memberIndex) || memberIndex < 0 || memberIndex >= members.length) {
             showAlert('Member tidak valid.', 'error');
             return;
         }
-        if (isNaN(amount) || amount <= 0) {
-            showAlert('Masukkan jumlah tabungan yang valid.', 'error');
+
+        if ((amountTabungan <= 0 && amountJimpitan <= 0) || (isNaN(amountTabungan) && isNaN(amountJimpitan))) {
+            showAlert('Masukkan jumlah tabungan atau jimpitan yang valid.', 'error');
             return;
         }
 
         const today = new Date().toISOString();
         const member = members[memberIndex];
-        
-        const newSaving = {
+
+        // Create a copy of the member's savings
+        const updatedSavings = [...member.savings];
+
+        // Add tabungan entry if amount is provided
+        updatedSavings.push({
             date: today,
-            amount,
-            type: savingType
-        };
-        
-        // Create a copy of the member's savings and add the new one
-        const updatedSavings = [...member.savings, newSaving];
-        
+            bills: {
+                tabungan: amountTabungan,
+                jimpitan: amountJimpitan
+            }
+        });
+
         // Update Firestore
         db.collection('members').doc(member.id).update({
             savings: updatedSavings
         })
-        .then(() => {
-            // Update local data
-            members[memberIndex].savings = updatedSavings;
-            
-            // Reset form
-            $(this)[0].reset();
-            
-            // Re-open the detail modal to refresh the data
-            refreshSavingsDetail(memberIndex);
-            
-            // Update the main screen if needed
-            renderMembers();
-            
-            showAlert(`Tabungan sebesar ${formatRupiah(amount)} berhasil ditambahkan untuk member "${member.name}".`, 'success');
-        })
-        .catch((error) => {
-            console.error("Error adding saving: ", error);
-            showAlert(`Gagal menambahkan tabungan: ${error.message}`, 'error');
-        });
+            .then(() => {
+                // Update local data
+                members[memberIndex].savings = updatedSavings;
+
+                // Reset form
+                $(this)[0].reset();
+
+                // Re-open the detail modal to refresh the data
+                refreshSavingsDetail(memberIndex);
+
+                // Update the main screen if needed
+                renderMembers();
+
+                showAlert(`Tabungan berhasil ditambahkan untuk member "${member.name}".`, 'success');
+            })
+            .catch((error) => {
+                console.error("Error adding saving: ", error);
+                showAlert(`Gagal menambahkan tabungan: ${error.message}`, 'error');
+            });
     });
 
     // Close detail savings modal
@@ -739,34 +631,6 @@ $(document).ready(function () {
     $('#closeModal').on('click', function () {
         $('#memberModal').addClass('hidden');
         $('body').css('overflow', '');
-    });
-
-    // Modal for adding savings functionality
-    $('#btnAddSavings').on('click', function () {
-        $('#savingsModal').removeClass('hidden');
-        $('#selectMember').focus();
-        $('body').css('overflow', 'hidden');
-    });
-
-    $('#closeSavingsModal').on('click', function () {
-        $('#savingsModal').addClass('hidden');
-        $('body').css('overflow', '');
-    });
-
-    // Close modal when clicking outside of it
-    $('#savingsModal').on('click', function (e) {
-        if (e.target === this) {
-            $('#savingsModal').addClass('hidden');
-            $('body').css('overflow', '');
-        }
-    });
-
-    // Close modal on Escape key for savings modal
-    $(document).on('keydown', function (e) {
-        if (e.key === 'Escape' && !$('#savingsModal').hasClass('hidden')) {
-            $('#savingsModal').addClass('hidden');
-            $('body').css('overflow', '');
-        }
     });
 
     // Close modal when clicking outside of it
@@ -956,12 +820,12 @@ $(document).ready(function () {
         const savingIndex = $(this).data('saving-index');
         const amount = $(this).data('amount');
         const type = $(this).data('type');
-        
+
         $('#editSavingsMemberIndex').val(memberIndex);
         $('#editSavingsIndex').val(savingIndex);
         $('#editSavingsAmount').val(amount);
         $('#editSavingsType').val(type);
-        
+
         $('#editSavingsModal').removeClass('hidden');
         $('#editSavingsAmount').focus();
         $('body').css('overflow', 'hidden');
@@ -1003,7 +867,7 @@ $(document).ready(function () {
         }
 
         const member = members[memberIndex];
-        
+
         // Create a new array of savings with the updated item
         const updatedSavings = [...member.savings];
         updatedSavings[savingIndex] = {
@@ -1011,29 +875,29 @@ $(document).ready(function () {
             amount: amount,
             type: type
         };
-        
+
         // Update Firestore
         db.collection('members').doc(member.id).update({
             savings: updatedSavings
         })
-        .then(() => {
-            // Update local data
-            members[memberIndex].savings = updatedSavings;
-            
-            $('#editSavingsModal').addClass('hidden');
-            $('body').css('overflow', '');
-            
-            // Refresh the detail savings modal
-            refreshSavingsDetail(memberIndex);
-            
-            // Update the main view
-            renderMembers();
-            showAlert('Data tabungan berhasil diperbarui.', 'success');
-        })
-        .catch((error) => {
-            console.error("Error updating saving: ", error);
-            showAlert(`Gagal memperbarui tabungan: ${error.message}`, 'error');
-        });
+            .then(() => {
+                // Update local data
+                members[memberIndex].savings = updatedSavings;
+
+                $('#editSavingsModal').addClass('hidden');
+                $('body').css('overflow', '');
+
+                // Refresh the detail savings modal
+                refreshSavingsDetail(memberIndex);
+
+                // Update the main view
+                renderMembers();
+                showAlert('Data tabungan berhasil diperbarui.', 'success');
+            })
+            .catch((error) => {
+                console.error("Error updating saving: ", error);
+                showAlert(`Gagal memperbarui tabungan: ${error.message}`, 'error');
+            });
     });
 
     // ===== Delete Savings Functionality =====
@@ -1042,7 +906,7 @@ $(document).ready(function () {
     $(document).on('click', '.btn-delete-saving', function () {
         const memberIndex = $(this).data('member-index');
         const savingIndex = $(this).data('saving-index');
-        
+
         $('#deleteSavingsMemberIndex').val(memberIndex);
         $('#deleteSavingsIndex').val(savingIndex);
 
@@ -1061,32 +925,32 @@ $(document).ready(function () {
         const memberIndex = parseInt($('#deleteSavingsMemberIndex').val());
         const savingIndex = parseInt($('#deleteSavingsIndex').val());
         const member = members[memberIndex];
-        
+
         // Create a new array of savings without the deleted item
         const updatedSavings = member.savings.filter((_, index) => index !== savingIndex);
-        
+
         // Update Firestore
         db.collection('members').doc(member.id).update({
             savings: updatedSavings
         })
-        .then(() => {
-            // Update local data
-            members[memberIndex].savings = updatedSavings;
-            
-            $('#deleteSavingsModal').addClass('hidden');
-            $('body').css('overflow', '');
-            
-            // Refresh the detail savings modal
-            refreshSavingsDetail(memberIndex);
-            
-            // Update the main view
-            renderMembers();
-            showAlert('Catatan tabungan berhasil dihapus.', 'success');
-        })
-        .catch((error) => {
-            console.error("Error deleting saving: ", error);
-            showAlert(`Gagal menghapus tabungan: ${error.message}`, 'error');
-        });
+            .then(() => {
+                // Update local data
+                members[memberIndex].savings = updatedSavings;
+
+                $('#deleteSavingsModal').addClass('hidden');
+                $('body').css('overflow', '');
+
+                // Refresh the detail savings modal
+                refreshSavingsDetail(memberIndex);
+
+                // Update the main view
+                renderMembers();
+                showAlert('Catatan tabungan berhasil dihapus.', 'success');
+            })
+            .catch((error) => {
+                console.error("Error deleting saving: ", error);
+                showAlert(`Gagal menghapus tabungan: ${error.message}`, 'error');
+            });
     });
 
     // Close delete savings modal when clicking outside
@@ -1108,35 +972,35 @@ $(document).ready(function () {
     // Helper function to refresh savings detail view
     function refreshSavingsDetail(memberIndex) {
         const member = members[memberIndex];
-        
+
         // Clear previous content
         $('#savingsDetailTable').empty();
-        
+
         // Sort savings by date (newest first)
         const sortedSavings = [...member.savings].sort((a, b) =>
             new Date(b.date) - new Date(a.date)
         );
-        
+
         // Calculate total savings
-        const totalSavings = member.savings.reduce((acc, cur) => acc + cur.amount, 0);
-        
+        const totalSavings = member.savings.reduce((acc, cur) => acc + cur.bills.tabungan + cur.bills.jimpitan, 0);
+
         // Display each saving entry
         $.each(sortedSavings, function (i, saving) {
             const formattedDate = formatDate(saving.date);
-            const formattedAmount = formatRupiah(saving.amount);
-            const savingType = saving.type ? saving.type.charAt(0).toUpperCase() + saving.type.slice(1) : 'Tabungan';
-            
+            const formattedAmountTabungan = formatRupiah(saving.bills.tabungan || 0);
+            const formattedAmountJimpitan = formatRupiah(saving.bills.jimpitan || 0);
+
             // Find the original index in member's savings array
-            const originalIndex = member.savings.findIndex(s => 
+            const originalIndex = member.savings.findIndex(s =>
                 s.date === saving.date && s.amount === saving.amount && s.type === saving.type
             );
-            
+
             const row = $(`
                 <tr class="${i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}">
                     <td class="px-4 py-2 whitespace-nowrap">${formattedDate}</td>
-                    <td class="px-4 py-2">${savingType}</td>
-                    <td class="px-4 py-2 text-right font-medium">${formattedAmount}</td>
-                    <td class="px-4 py-2 text-right">
+                    <td class="px-4 py-2 text-right font-medium">${formattedAmountTabungan}</td>
+                    <td class="px-4 py-2 text-right font-medium">${formattedAmountJimpitan}</td>
+                    <td class="px-4 py-2 text-right min-w-[100px]">
                         <button class="btn-edit-saving text-blue-600 hover:text-blue-800 mx-1" 
                             data-member-index="${memberIndex}" data-saving-index="${originalIndex}"
                             data-amount="${saving.amount}" data-type="${saving.type || 'tabungan'}">
@@ -1149,16 +1013,16 @@ $(document).ready(function () {
                     </td>
                 </tr>
             `);
-            
+
             $('#savingsDetailTable').append(row);
         });
-        
+
         // Show total amount
         $('#totalSavingsAmount').text(formatRupiah(totalSavings));
     }
 
     // Auto-backup data to Firestore every 5 minutes
-    setInterval(function() {
+    setInterval(function () {
         console.log('Auto-backup is running...');
         // Nothing to do here as we're directly writing to Firestore on each change
     }, 5 * 60 * 1000); // 5 minutes in milliseconds
