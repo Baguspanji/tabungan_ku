@@ -1,6 +1,8 @@
 $(document).ready(function () {
     // Data structure to hold members and their savings
     let members = [];
+    // Get current user
+    let currentUser = null;
 
     // Loading state indicator
     let isLoading = true;
@@ -20,13 +22,29 @@ $(document).ready(function () {
     // Show initial loading
     showLoading();
 
+    // Initialize with current user
+    firebase.auth().onAuthStateChanged(function(user) {
+        if (user) {
+            currentUser = user;
+            fetchMembers(); // Fetch members for this user
+        } else {
+            // User is not logged in, redirect to login page
+            window.location.href = "login.html";
+        }
+    });
+
     // Fetch data from Firestore
     function fetchMembers() {
         isLoading = true;
         showLoading();
 
-        // Get members collection from Firestore
-        db.collection('members').get().then((querySnapshot) => {
+        if (!currentUser) {
+            showAlert('Silakan login terlebih dahulu.', 'error');
+            return;
+        }
+
+        // Get members collection from Firestore for the current user
+        db.collection('users').doc(currentUser.uid).collection('members').get().then((querySnapshot) => {
             members = [];
             querySnapshot.forEach((doc) => {
                 const memberData = doc.data();
@@ -47,9 +65,6 @@ $(document).ready(function () {
             renderMembers();
         });
     }
-
-    // Initial data fetch
-    fetchMembers();
 
     // Pagination configuration
     const paginationConfig = {
@@ -329,7 +344,7 @@ $(document).ready(function () {
         };
 
         // Add to Firestore
-        db.collection('members').add(newMember)
+        db.collection('users').doc(currentUser.uid).collection('members').add(newMember)
             .then((docRef) => {
                 // Update local data with the document ID
                 newMember.id = docRef.id;
@@ -437,7 +452,7 @@ $(document).ready(function () {
         showLoading();
 
         // Update data in Firestore
-        db.collection('members').doc(member.id).update({
+        db.collection('users').doc(currentUser.uid).collection('members').doc(member.id).update({
             name: name,
             note: $('#editMemberNote').val().trim()
         })
@@ -488,7 +503,7 @@ $(document).ready(function () {
         showLoading();
 
         // Delete from Firestore
-        db.collection('members').doc(member.id).delete()
+        db.collection('users').doc(currentUser.uid).collection('members').doc(member.id).delete()
             .then(() => {
                 // Remove from local array
                 members.splice(index, 1);
@@ -575,7 +590,7 @@ $(document).ready(function () {
         });
 
         // Update Firestore
-        db.collection('members').doc(member.id).update({
+        db.collection('users').doc(currentUser.uid).collection('members').doc(member.id).update({
             savings: updatedSavings
         })
             .then(() => {
@@ -888,7 +903,7 @@ $(document).ready(function () {
         };
 
         // Update Firestore
-        db.collection('members').doc(member.id).update({
+        db.collection('users').doc(currentUser.uid).collection('members').doc(member.id).update({
             savings: updatedSavings
         })
             .then(() => {
@@ -941,7 +956,7 @@ $(document).ready(function () {
         const updatedSavings = member.savings.filter((_, index) => index !== savingIndex);
 
         // Update Firestore
-        db.collection('members').doc(member.id).update({
+        db.collection('users').doc(currentUser.uid).collection('members').doc(member.id).update({
             savings: updatedSavings
         })
             .then(() => {
