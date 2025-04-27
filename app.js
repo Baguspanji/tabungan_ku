@@ -7,6 +7,33 @@ $(document).ready(function () {
     // Loading state indicator
     let isLoading = true;
 
+    // Function to update summary stats
+    function updateSummaryStats() {
+        // Count total members
+        const totalMembers = members.length;
+        $('#totalMemberCount').text(totalMembers);
+
+        // Calculate total tabungan
+        let totalTabungan = 0;
+        let totalJimpitan = 0;
+
+        members.forEach(member => {
+            if (member.savings && Array.isArray(member.savings)) {
+                member.savings.forEach(saving => {
+                    if (saving.bills) {
+                        totalTabungan += saving.bills.tabungan || 0;
+                        totalJimpitan += saving.bills.jimpitan || 0;
+                    }
+                });
+            }
+        });
+
+        // Display formatted values
+        $('#totalTabunganAmount').text(formatRupiah(totalTabungan));
+        $('#totalJimpitanAmount').text(formatRupiah(totalJimpitan));
+        $('#grandTotalAmount').text(formatRupiah(totalTabungan + totalJimpitan));
+    }
+
     // Show loading indicator function
     function showLoading() {
         $('#membersList').html(`
@@ -58,6 +85,7 @@ $(document).ready(function () {
 
             isLoading = false;
             renderMembers();
+            updateSummaryStats(); // Update summary stats after fetching members
         }).catch((error) => {
             console.error("Error fetching members: ", error);
             isLoading = false;
@@ -389,6 +417,7 @@ $(document).ready(function () {
                 paginationConfig.currentPage = Math.ceil(members.length / paginationConfig.membersPerPage);
                 renderMembers();
                 showAlert(`Member "${name}" berhasil didaftarkan.`, 'success');
+                updateSummaryStats(); // Update summary stats after adding a new member
             })
             .catch((error) => {
                 console.error("Error adding member: ", error);
@@ -496,6 +525,7 @@ $(document).ready(function () {
                 $('body').css('overflow', '');
                 renderMembers();
                 showAlert(`Data member "${name}" berhasil diperbarui.`, 'success');
+                updateSummaryStats(); // Update summary stats after editing a member
             })
             .catch((error) => {
                 console.error("Error updating member: ", error);
@@ -543,6 +573,7 @@ $(document).ready(function () {
                 $('body').css('overflow', '');
                 renderMembers();
                 showAlert(`Member "${memberName}" berhasil dihapus.`, 'success');
+                updateSummaryStats(); // Update summary stats after deleting a member
             })
             .catch((error) => {
                 console.error("Error deleting member: ", error);
@@ -636,8 +667,8 @@ $(document).ready(function () {
 
                 // Update the main screen if needed
                 renderMembers();
-
                 showAlert(`Tabungan berhasil ditambahkan untuk member "${member.name}".`, 'success');
+                updateSummaryStats(); // Update summary stats after adding savings
             })
             .catch((error) => {
                 console.error("Error adding saving: ", error);
@@ -959,6 +990,7 @@ $(document).ready(function () {
                 // Update the main view
                 renderMembers();
                 showAlert('Data tabungan berhasil diperbarui.', 'success');
+                updateSummaryStats(); // Update summary stats after editing savings
             })
             .catch((error) => {
                 console.error("Error updating saving: ", error);
@@ -1012,6 +1044,7 @@ $(document).ready(function () {
                 // Update the main view
                 renderMembers();
                 showAlert('Catatan tabungan berhasil dihapus.', 'success');
+                updateSummaryStats(); // Update summary stats after deleting savings
             })
             .catch((error) => {
                 console.error("Error deleting saving: ", error);

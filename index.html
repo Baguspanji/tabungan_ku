@@ -134,6 +134,33 @@
 
         <section id="panel-member" role="tabpanel" aria-labelledby="tab-member" tabindex="0"
             class="tab-panel focus:outline-none">
+            <!-- Rekap Stats Panel -->
+            <div class="mb-6 bg-white rounded-lg shadow-md">
+                <div class="p-4 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-700 flex items-center gap-2">
+                        <i class="fas fa-chart-pie text-blue-600"></i> Rekap Tabungan
+                    </h3>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 p-4">
+                    <div class="bg-blue-50 p-3 rounded-md flex flex-col items-center justify-center">
+                        <p class="text-gray-500 font-medium mb-1">Jumlah Member</p>
+                        <h4 id="totalMemberCount" class="text-2xl font-bold text-blue-600">0</h4>
+                    </div>
+                    <div class="bg-green-50 p-3 rounded-md flex flex-col items-center justify-center">
+                        <p class="text-gray-500 font-medium mb-1">Total Tabungan</p>
+                        <h4 id="totalTabunganAmount" class="text-2xl font-bold text-green-600">Rp 0</h4>
+                    </div>
+                    <div class="bg-yellow-50 p-3 rounded-md flex flex-col items-center justify-center">
+                        <p class="text-gray-500 font-medium mb-1">Total Jimpitan</p>
+                        <h4 id="totalJimpitanAmount" class="text-2xl font-bold text-yellow-600">Rp 0</h4>
+                    </div>
+                    <div class="bg-purple-50 p-3 rounded-md flex flex-col items-center justify-center">
+                        <p class="text-gray-500 font-medium mb-1">Total Keseluruhan</p>
+                        <h4 id="grandTotalAmount" class="text-2xl font-bold text-purple-600">Rp 0</h4>
+                    </div>
+                </div>
+            </div>
+
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-semibold mb-4 text-blue-700">Daftar Member</h2>
                 <button id="btnAddMember"
