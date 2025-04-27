@@ -77,6 +77,37 @@ $(document).ready(function () {
     function formatRupiah(number) {
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(number);
     }
+    
+    // Currency input formatter function
+    function formatCurrency(input) {
+        // Remove non-digit characters
+        let value = input.val().replace(/\D/g, '');
+        
+        // Format the number with thousand separators
+        if (value === '') {
+            input.val('');
+        } else {
+            // Parse as integer
+            value = parseInt(value, 10);
+            
+            // Format with thousand separators (dot for Indonesia)
+            let formattedValue = value.toLocaleString('id-ID');
+            input.val(formattedValue);
+        }
+        
+        return value; // Return the numeric value
+    }
+    
+    // Parse currency string to number
+    function parseCurrency(str) {
+        // Remove all non-digit characters and parse as integer
+        return parseInt(str.replace(/\D/g, '') || '0', 10);
+    }
+    
+    // Add event listeners for currency formatting
+    $(document).on('input', '#detailAmountTabungan, #detailAmountJimpitan, #editSavingsAmountTabungan, #editSavingsAmountJimpitan', function() {
+        formatCurrency($(this));
+    });
 
     // Format date to dd-mm-yyyy
     function formatDate(date) {
@@ -561,8 +592,8 @@ $(document).ready(function () {
     $('#addSavingsDetailForm').on('submit', function (e) {
         e.preventDefault();
         const memberIndex = parseInt($('#detailSavingsMemberIndex').val());
-        const amountTabungan = parseInt($('#detailAmountTabungan').val()) || 0;
-        const amountJimpitan = parseInt($('#detailAmountJimpitan').val()) || 0;
+        const amountTabungan = parseCurrency($('#detailAmountTabungan').val()) || 0;
+        const amountJimpitan = parseCurrency($('#detailAmountJimpitan').val()) || 0;
 
         if (isNaN(memberIndex) || memberIndex < 0 || memberIndex >= members.length) {
             showAlert('Member tidak valid.', 'error');
@@ -842,9 +873,18 @@ $(document).ready(function () {
         $('#editSavingsIndex').val(savingIndex);
         $('#editSavingsDate').val(saving.date);
         
-        // Set tabungan and jimpitan amounts
-        $('#editSavingsAmountTabungan').val(saving.bills.tabungan || 0);
-        $('#editSavingsAmountJimpitan').val(saving.bills.jimpitan || 0);
+        // Set tabungan and jimpitan amounts with formatting
+        if (saving.bills && saving.bills.tabungan) {
+            $('#editSavingsAmountTabungan').val(saving.bills.tabungan.toLocaleString('id-ID'));
+        } else {
+            $('#editSavingsAmountTabungan').val('');
+        }
+        
+        if (saving.bills && saving.bills.jimpitan) {
+            $('#editSavingsAmountJimpitan').val(saving.bills.jimpitan.toLocaleString('id-ID'));
+        } else {
+            $('#editSavingsAmountJimpitan').val('');
+        }
         
         // Display date in a readable format
         $('#editSavingsDateDisplay').text(formatDate(saving.date));
@@ -881,8 +921,8 @@ $(document).ready(function () {
         e.preventDefault();
         const memberIndex = parseInt($('#editSavingsMemberIndex').val());
         const savingIndex = parseInt($('#editSavingsIndex').val());
-        const amountTabungan = parseInt($('#editSavingsAmountTabungan').val()) || 0;
-        const amountJimpitan = parseInt($('#editSavingsAmountJimpitan').val()) || 0;
+        const amountTabungan = parseCurrency($('#editSavingsAmountTabungan').val()) || 0;
+        const amountJimpitan = parseCurrency($('#editSavingsAmountJimpitan').val()) || 0;
         const date = $('#editSavingsDate').val(); // Keep the original date
 
         if ((amountTabungan <= 0 && amountJimpitan <= 0) || (isNaN(amountTabungan) && isNaN(amountJimpitan))) {
