@@ -50,7 +50,7 @@ $(document).ready(function () {
     showLoading();
 
     // Initialize with current user
-    firebase.auth().onAuthStateChanged(function(user) {
+    firebase.auth().onAuthStateChanged(function (user) {
         if (user) {
             currentUser = user;
             fetchMembers(); // Fetch members for this user
@@ -105,35 +105,35 @@ $(document).ready(function () {
     function formatRupiah(number) {
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(number);
     }
-    
+
     // Currency input formatter function
     function formatCurrency(input) {
         // Remove non-digit characters
         let value = input.val().replace(/\D/g, '');
-        
+
         // Format the number with thousand separators
         if (value === '') {
             input.val('');
         } else {
             // Parse as integer
             value = parseInt(value, 10);
-            
+
             // Format with thousand separators (dot for Indonesia)
             let formattedValue = value.toLocaleString('id-ID');
             input.val(formattedValue);
         }
-        
+
         return value; // Return the numeric value
     }
-    
+
     // Parse currency string to number
     function parseCurrency(str) {
         // Remove all non-digit characters and parse as integer
         return parseInt(str.replace(/\D/g, '') || '0', 10);
     }
-    
+
     // Add event listeners for currency formatting
-    $(document).on('input', '#detailAmountTabungan, #detailAmountJimpitan, #editSavingsAmountTabungan, #editSavingsAmountJimpitan', function() {
+    $(document).on('input', '#detailAmountTabungan, #detailAmountJimpitan, #editSavingsAmountTabungan, #editSavingsAmountJimpitan', function () {
         formatCurrency($(this));
     });
 
@@ -331,7 +331,7 @@ $(document).ready(function () {
             const totalSaved = totalTabungan + totalJimpitan;
 
             const memberCard = $(`
-                <div class="bg-white p-4 rounded-lg shadow flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 relative">
+                <div class="member-card bg-white p-4 rounded-lg shadow flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 relative cursor-pointer" data-index="${startIndex + index}">
                     <div class="absolute top-2 right-2 flex gap-2">
                         <button class="btn-menu-member text-gray-600 hover:text-blue-800 text-sm flex items-center gap-1 p-1" data-index="${startIndex + index}" aria-haspopup="true" aria-expanded="false">
                             <i class="fa-solid fa-ellipsis-vertical"></i>
@@ -843,8 +843,8 @@ $(document).ready(function () {
 
             const totalSaved = totalTabungan + totalJimpitan;
 
-            const memberCard = $(`
-                <div class="bg-white p-4 rounded-lg shadow flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 relative">
+            const memberCard = $(
+                `<div class="member-card bg-white p-4 rounded-lg shadow flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 relative cursor-pointer" data-index="${memberIndex}">
                     <div class="absolute top-2 right-2 flex gap-2">
                         <button class="btn-menu-member text-gray-600 hover:text-blue-800 text-sm flex items-center gap-1 p-1" data-index="${memberIndex}" aria-haspopup="true" aria-expanded="false">
                             <i class="fa-solid fa-ellipsis-vertical"></i>
@@ -889,34 +889,41 @@ $(document).ready(function () {
     // Initialize member filters
     setupMemberFilters();
 
+    // Make member card clickable for detail tabungan
+    $(document).on('click', '.member-card', function () {
+        const index = $(this).data('index');
+        // Trigger detail tabungan modal
+        $('.btn-detail-savings[data-index="' + index + '"]').trigger('click');
+    });
+
     // ===== Edit Savings Functionality =====
 
     // Open edit savings modal
     $(document).on('click', '.btn-edit-saving', function () {
         const memberIndex = $(this).data('member-index');
         const savingIndex = $(this).data('saving-index');
-        
+
         const member = members[memberIndex];
         const saving = member.savings[savingIndex];
-        
+
         // Set form values
         $('#editSavingsMemberIndex').val(memberIndex);
         $('#editSavingsIndex').val(savingIndex);
         $('#editSavingsDate').val(saving.date);
-        
+
         // Set tabungan and jimpitan amounts with formatting
         if (saving.bills && saving.bills.tabungan) {
             $('#editSavingsAmountTabungan').val(saving.bills.tabungan.toLocaleString('id-ID'));
         } else {
             $('#editSavingsAmountTabungan').val('');
         }
-        
+
         if (saving.bills && saving.bills.jimpitan) {
             $('#editSavingsAmountJimpitan').val(saving.bills.jimpitan.toLocaleString('id-ID'));
         } else {
             $('#editSavingsAmountJimpitan').val('');
         }
-        
+
         // Display date in a readable format
         $('#editSavingsDateDisplay').text(formatDate(saving.date));
 
@@ -1096,6 +1103,7 @@ $(document).ready(function () {
 
             const row = $(`
                 <tr class="${i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}">
+                    <td class="px-4 py-2 text-center">${i + 1}</td>
                     <td class="px-4 py-2 whitespace-nowrap">${formattedDate}</td>
                     <td class="px-4 py-2 text-right font-medium">${formattedAmountTabungan}</td>
                     <td class="px-4 py-2 text-right font-medium">${formattedAmountJimpitan}</td>

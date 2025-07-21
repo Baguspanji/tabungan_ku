@@ -9,7 +9,6 @@
     <!-- Replaced Tailwind CDN with locally compiled CSS -->
     <!-- <link rel="stylesheet" href="dist/styles.css"> -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
     <!-- Firebase SDK -->
@@ -367,6 +366,7 @@
                             <table class="w-full text-sm text-left text-gray-700">
                                 <thead class="text-xs text-gray-700 uppercase bg-gray-100">
                                     <tr>
+                                        <th scope="col" class="px-4 py-3">No</th>
                                         <th scope="col" class="px-4 py-3">Tanggal</th>
                                         <th scope="col" class="px-4 py-3">Tabungan</th>
                                         <th scope="col" class="px-4 py-3">Jimpitan</th>
@@ -398,7 +398,13 @@
                     <form id="editSavingsForm" class="space-y-4">
                         <input type="hidden" id="editSavingsMemberIndex">
                         <input type="hidden" id="editSavingsIndex">
-                        <input type="hidden" id="editSavingsDate">
+                        <!-- Input tanggal untuk edit tabungan -->
+                        <div>
+                            <label for="editSavingsDate" class="block text-gray-700 font-medium mb-1">Tanggal</label>
+                            <input type="date" id="editSavingsDate" name="editSavingsDate"
+                                class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                required />
+                        </div>
                         
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
@@ -419,7 +425,8 @@
                             </div>
                         </div>
                         
-                        <p class="text-sm text-gray-500 italic">Tanggal: <span id="editSavingsDateDisplay"></span></p>
+                        <!-- Tanggal yang lama tetap ditampilkan untuk referensi -->
+                        <p class="text-sm text-gray-500 italic">Tanggal sebelumnya: <span id="editSavingsDateDisplay"></span></p>
                         
                         <button type="submit"
                             class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-md transition">
