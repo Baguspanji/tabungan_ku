@@ -241,7 +241,7 @@ const handleLogin = async () => {
     showAlert('Login berhasil. Mengalihkan...', 'success')
 
     setTimeout(() => {
-      router.push('/dashboard')
+      router.push('/')
     }, 1000)
 
   } catch (error: unknown) {
@@ -255,7 +255,7 @@ const handleLogin = async () => {
 // Check if user is already logged in when component mounts
 onMounted(() => {
   if (authStore.isAuthenticated) {
-    router.push('/dashboard')
+    router.push('/')
   }
 })
 </script>

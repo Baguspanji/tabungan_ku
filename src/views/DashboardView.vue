@@ -205,7 +205,7 @@
               <p class="mt-1 text-sm text-gray-500">Mulai dengan menambahkan member pertama untuk mengelola tabungan.
               </p>
               <div class="mt-6 flex justify-center space-x-4">
-                <router-link to="/members"
+                <button @click="openAddMemberModal"
                   class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                   <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -213,7 +213,7 @@
                     </path>
                   </svg>
                   Tambah Member Pertama
-                </router-link>
+                </button>
               </div>
             </div>
           </div>
@@ -242,6 +242,7 @@ import { onMounted, computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useMembersStore, type Member } from '@/stores/members'
+import { useToastStore } from '@/stores/toast'
 import AppLayout from '@/components/AppLayout.vue'
 import AppTable from '@/components/AppTable.vue'
 import MemberModal from '@/components/MemberModal.vue'
@@ -253,6 +254,7 @@ import TransactionHistoryModal from '@/components/TransactionHistoryModal.vue'
 const router = useRouter()
 const authStore = useAuthStore()
 const membersStore = useMembersStore()
+const toastStore = useToastStore()
 
 // Local state
 const searchQuery = ref('')
@@ -346,7 +348,7 @@ const loadDashboardData = async () => {
     }
   } catch (error) {
     console.error('Error loading dashboard data:', error)
-    // TODO: Show error notification to user
+    toastStore.showError('Gagal Memuat Data', 'Terjadi kesalahan saat memuat data dashboard')
   }
 }
 
@@ -389,23 +391,27 @@ const closeTransactionHistoryModal = () => {
   selectedMember.value = null
 }
 
-const handleMemberSubmit = () => {
-  // This is handled by the MemberModal component
-  // Just close the modal since the component handles the API call
+const handleMemberSubmit = (memberData: { name: string; note: string }) => {
+  // Show success toast
+  if (isEditMode.value) {
+    toastStore.showSuccess('Member Berhasil Diperbarui', `Data member "${memberData.name}" telah diperbarui`)
+  } else {
+    toastStore.showSuccess('Member Berhasil Ditambahkan', `Member "${memberData.name}" telah ditambahkan`)
+  }
   closeMemberModal()
-  // TODO: Show success notification
 }
 
 const handleDeleteMember = async () => {
   if (!selectedMember.value) return
 
   try {
+    const memberName = selectedMember.value.name
     await membersStore.deleteMember(selectedMember.value.id)
     closeDeleteConfirmModal()
-    // TODO: Show success notification
+    toastStore.showSuccess('Member Berhasil Dihapus', `Member "${memberName}" telah dihapus`)
   } catch (error: unknown) {
     console.error('Error deleting member:', error)
-    // TODO: Show error notification
+    toastStore.showError('Gagal Menghapus Member', error instanceof Error ? error.message : 'Terjadi kesalahan saat menghapus member')
   }
 }
 

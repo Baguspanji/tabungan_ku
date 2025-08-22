@@ -5,18 +5,14 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/',
-      redirect: '/dashboard'
-    },
-    {
       path: '/login',
       name: 'login',
       component: () => import('../views/LoginView.vue'),
       meta: { requiresGuest: true }
     },
     {
-      path: '/dashboard',
-      name: 'dashboard',
+      path: '/',
+      name: '',
       component: () => import('../views/DashboardView.vue'),
       meta: { requiresAuth: true }
     },
@@ -34,7 +30,7 @@ router.beforeEach((to) => {
 
   // Check if route requires guest (not authenticated)
   if (to.meta.requiresGuest && authStore.isAuthenticated) {
-    return '/dashboard'
+    return '/'
   }
 
   return true

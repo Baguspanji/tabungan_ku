@@ -290,6 +290,7 @@
 import { computed, ref, reactive } from 'vue'
 import type { Member, Saving } from '@/stores/members'
 import { useMembersStore } from '@/stores/members'
+import { useToastStore } from '@/stores/toast'
 
 // Props
 interface Props {
@@ -305,6 +306,7 @@ const emit = defineEmits<{
 }>()
 
 const membersStore = useMembersStore()
+const toastStore = useToastStore()
 
 // Form state
 const showForm = ref(false)
@@ -437,9 +439,12 @@ const handleSubmitTransaction = async () => {
     if (isEditing.value) {
       // Edit existing transaction
       await editTransaction()
+      toastStore.showSuccess('Transaksi Berhasil Diperbarui', 'Data transaksi telah diperbarui')
     } else {
       // Add new transaction
       await addTransaction()
+      const amount = (form.tabungan || 0) + (form.jimpitan || 0)
+      toastStore.showSuccess('Transaksi Berhasil Ditambahkan', `Transaksi sebesar ${formatCurrency(amount)} telah ditambahkan`)
     }
 
     // Reset form and close it
@@ -449,7 +454,9 @@ const handleSubmitTransaction = async () => {
     // No need to refresh data - store methods already update local state
   } catch (error) {
     console.error('Error submitting transaction:', error)
-    formErrors.general = 'Gagal menyimpan transaksi. Silakan coba lagi.'
+    const errorMessage = error instanceof Error ? error.message : 'Gagal menyimpan transaksi. Silakan coba lagi.'
+    toastStore.showError('Gagal Menyimpan Transaksi', errorMessage)
+    formErrors.general = errorMessage
   } finally {
     isSubmitting.value = false
   }
@@ -520,11 +527,14 @@ const confirmDeleteTransaction = async (index: number) => {
   if (actualIndex === -1) return
 
   try {
+    const totalAmount = transaction.bills.tabungan + transaction.bills.jimpitan
     await membersStore.deleteSaving(props.member.id, actualIndex)
+    toastStore.showSuccess('Transaksi Berhasil Dihapus', `Transaksi sebesar ${formatCurrency(totalAmount)} telah dihapus`)
     // No need to refresh data - deleteSaving already updates local state
   } catch (error) {
     console.error('Error deleting transaction:', error)
-    alert('Gagal menghapus transaksi. Silakan coba lagi.')
+    const errorMessage = error instanceof Error ? error.message : 'Gagal menghapus transaksi. Silakan coba lagi.'
+    toastStore.showError('Gagal Menghapus Transaksi', errorMessage)
   }
 }
 
