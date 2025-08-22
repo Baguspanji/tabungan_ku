@@ -116,7 +116,7 @@
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <span class="text-gray-500 sm:text-sm">Rp</span>
                     </div>
-                    <input id="tabungan" v-model.number="form.tabungan" type="number" min="0" step="1000"
+                    <input id="tabungan" v-model.number="form.tabungan" type="number" min="0" step="100"
                       placeholder="0"
                       class="block w-full pl-8 pr-3 py-2 text-gray-800 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       :class="{
@@ -136,7 +136,7 @@
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <span class="text-gray-500 sm:text-sm">Rp</span>
                     </div>
-                    <input id="jimpitan" v-model.number="form.jimpitan" type="number" min="0" step="1000"
+                    <input id="jimpitan" v-model.number="form.jimpitan" type="number" min="0" step="100"
                       placeholder="0"
                       class="block w-full pl-8 pr-3 py-2 text-gray-800 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       :class="{
